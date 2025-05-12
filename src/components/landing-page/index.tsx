@@ -9,6 +9,7 @@ import { HeartIcon, BarChartIcon, GiftIcon, UsersIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { useTheme } from 'next-themes'
 
 interface ParticipantProps {
   name: string
@@ -74,22 +75,6 @@ function HoverRevealImage() {
     return () => clearTimeout(timer)
   }, [])
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isInitialized) return
-
-    const rect = e.currentTarget.getBoundingClientRect()
-    setMousePosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    })
-    setIsHovering(true)
-  }
-
-  const handleMouseLeave = () => {
-    setIsHovering(false)
-  }
-
-  // Generate random plaster elements
   const plasterElements = React.useMemo(() => {
     return Array.from({ length: 15 }).map((_, i) => {
       const size = 80 + Math.random() * 100
@@ -97,7 +82,6 @@ function HoverRevealImage() {
       const posY = Math.random() * 100
       const rotation = Math.random() * 360
       const delay = Math.random() * 0.5
-
       return (
         <motion.div
           key={i}
@@ -113,46 +97,91 @@ function HoverRevealImage() {
             transform: `rotate(${rotation}deg)`,
             boxShadow: '0 0 20px 5px rgba(255, 255, 255, 0.2) inset',
             filter: 'blur(1px)',
+            zIndex: 1,
           }}
         />
       )
     })
   }, [isInitialized])
 
+  // Use a blue-tinted image for better visual effect with the site's color scheme
+  const imageUrl =
+    "url('https://plus.unsplash.com/premium_photo-1664640458531-3c7cca2a9323?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"
+
+  // Create a global event handler to capture mouse movements
+  React.useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      const section = document.querySelector('.hero-section')
+      if (!section) return
+
+      const rect = section.getBoundingClientRect()
+
+      // Check if mouse is within the section
+      if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        setMousePosition({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        })
+        setIsHovering(true)
+      } else {
+        setIsHovering(false)
+      }
+    }
+
+    // Add global mouse event listener
+    document.addEventListener('mousemove', handleGlobalMouseMove)
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove)
+    }
+  }, [isInitialized])
+
   return (
-    <div
-      className="absolute inset-0 z-0 overflow-hidden bg-gray-100"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 1 }}>
+      {/* Base background gradient */}
       <div
-        className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-200"
-        style={{ opacity: isInitialized ? 0.8 : 0, transition: 'opacity 1s ease-out' }}
-      />
-
-      {plasterElements}
-
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-0"
+        className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-300"
         style={{
-          backgroundImage:
-            "url('https://plus.unsplash.com/premium_photo-1664640458531-3c7cca2a9323?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+          opacity: isInitialized ? 0.8 : 0,
+          transition: 'opacity 1s ease-out',
+          zIndex: 0,
         }}
       />
 
+      {/* Background image with very low opacity */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: imageUrl,
+          opacity: isInitialized ? 0.15 : 0,
+          transition: 'opacity 1s ease-out',
+          zIndex: 1,
+          mixBlendMode: 'overlay',
+        }}
+      />
+
+      {/* Plaster elements */}
+      <div className="absolute inset-0" style={{ zIndex: 2 }}>
+        {plasterElements}
+      </div>
+
+      {/* Hover reveal spotlight */}
       {isHovering && (
         <div
           className="absolute bg-cover bg-center pointer-events-none"
           style={{
-            width: '250px',
-            height: '250px',
+            width: '300px',
+            height: '300px',
             borderRadius: '50%',
-            top: mousePosition.y - 125,
-            left: mousePosition.x - 125,
-            backgroundImage:
-              "url('https://plus.unsplash.com/premium_photo-1664640458531-3c7cca2a9323?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
-            boxShadow: '0 0 20px 5px rgba(0, 0, 0, 0.2)',
+            top: mousePosition.y - 150,
+            left: mousePosition.x - 150,
+            backgroundImage: imageUrl,
+            boxShadow: '0 0 30px 10px rgba(0, 0, 0, 0.2)',
             transition: 'all 0.05s ease-out',
+            opacity: 0.9,
+            zIndex: 30,
+            pointerEvents: 'none',
+            filter: 'brightness(1.1) saturate(1.2)',
           }}
         />
       )}
@@ -161,13 +190,15 @@ function HoverRevealImage() {
 }
 
 export function LandingPage() {
+  const { resolvedTheme } = useTheme()
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <main className="flex-1">
         <section className="mx-2 py-12 md:py-24 relative overflow-hidden rounded-2xl bg-gray-100">
           <HoverRevealImage />
 
-          <div className="container relative z-10">
+          <div className="container relative z-1">
             <div className="flex flex-col items-center gap-6 text-center max-w-3xl mx-auto">
               <Badge variant="outline" className="animate-appear gap-2 bg-black/10 backdrop-blur-sm border-gray-300">
                 <span className="text-gray-900 font-medium">Donate and win!</span>
@@ -199,7 +230,14 @@ export function LandingPage() {
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
                 <Button size="lg" className="text-lg bg-black hover:bg-gray-900 text-white">
-                  Buy Tickets Now
+                  <Link href="/enter">Buy Tickets Now</Link>
+                </Button>
+
+                <Button
+                  size="lg"
+                  className="px-4 py-2 font-medium rounded-lg border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 dark:hover:text-white transition-all duration-300 ease-in-out shadow-sm hover:shadow-md focus:ring-2 focus:ring-black/50 hover:text-black dark:focus:ring-white/50 focus:outline-none"
+                >
+                  <Link href="https://platform.engiven.com/give/2519/widget/2717">Donate without participating</Link>
                 </Button>
               </motion.div>
             </div>
@@ -220,16 +258,19 @@ export function LandingPage() {
                   id eleifend orci, vitae fringilla nulla.
                 </p>
                 <div className="flex gap-4">
-                  <Button variant="outline">Our Mission</Button>
-                  <Button variant="ghost">Our Impact</Button>
+                  <Button variant="outline">
+                    <Link href={'https://thbfdn.org'}> Our Charity</Link>
+                  </Button>
+                  <Button variant="ghost">
+                    <Link href={'https://www.tbhfdn.org/about'}> Our Why</Link>
+                  </Button>
                 </div>
               </div>
-              <div className="relative aspect-video rounded-xl overflow-hidden">
-                <Image
-                  src="https://images.unsplash.com/photo-1531750026848-8ada78f641c2?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3"
-                  alt="Community event by The Black History Foundation"
-                  fill
-                  className="object-cover"
+              <div className="w-full h-auto aspect-square max-w-xl mx-auto overflow-hidden rounded-lg">
+                <img
+                  src={resolvedTheme === 'dark' ? '/dark_mode_image.png' : '/light_mode_image.png'}
+                  alt={`${resolvedTheme} mode image`}
+                  className="w-full h-full object-cover"
                 />
               </div>
             </div>
@@ -251,9 +292,7 @@ export function LandingPage() {
                   <div className="relative mb-6">
                     <div className="w-20 h-20 rounded-full bg-[#9EF8F8]/30 flex items-center justify-center">
                       <div className="w-16 h-16 rounded-full bg-[#9EF8F8]/50 flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center relative z-10">
-                          {benefit.icon}
-                        </div>
+                        {benefit.icon}
                       </div>
                     </div>
                   </div>
@@ -271,7 +310,7 @@ export function LandingPage() {
         >
           <div className="container">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">How It Works</h2>
+              <h2 className="text-3xl font-bold mb-4">Payment Process</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
                 Our 50/50 raffle is simple to enter and supports a great cause.
               </p>
@@ -282,9 +321,7 @@ export function LandingPage() {
                 <div className="relative mb-6">
                   <div className="w-20 h-20 rounded-full bg-[#9EF8F8]/30 flex items-center justify-center">
                     <div className="w-16 h-16 rounded-full bg-[#9EF8F8]/50 flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center relative z-10">
-                        <span className="text-2xl font-bold text-primary">1</span>
-                      </div>
+                      <span className="text-2xl font-bold text-primary">1</span>
                     </div>
                   </div>
                 </div>
@@ -298,9 +335,7 @@ export function LandingPage() {
                 <div className="relative mb-6">
                   <div className="w-20 h-20 rounded-full bg-[#9EF8F8]/30 flex items-center justify-center">
                     <div className="w-16 h-16 rounded-full bg-[#9EF8F8]/50 flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center relative z-10">
-                        <span className="text-2xl font-bold text-primary">2</span>
-                      </div>
+                      <span className="text-2xl font-bold text-primary">2</span>
                     </div>
                   </div>
                 </div>
@@ -314,9 +349,7 @@ export function LandingPage() {
                 <div className="relative mb-6">
                   <div className="w-20 h-20 rounded-full bg-[#9EF8F8]/30 flex items-center justify-center">
                     <div className="w-16 h-16 rounded-full bg-[#9EF8F8]/50 flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center relative z-10">
-                        <span className="text-2xl font-bold text-primary">3</span>
-                      </div>
+                      <span className="text-2xl font-bold text-primary">3</span>
                     </div>
                   </div>
                 </div>
@@ -445,7 +478,7 @@ export function LandingPage() {
           <Separator className="my-8" />
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">© 2023 The Black History Foundation. All rights reserved.</p>
+            <p className="text-sm text-muted-foreground">© 2025 The Black History Foundation. All rights reserved.</p>
             <div className="flex gap-4">
               <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
                 Privacy Policy
