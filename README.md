@@ -44,3 +44,5 @@ more details.
 |:-|:-|
 |Frank Dierolf| frank_dierolf@web.de|
 |Judith Williams| j.williams@theblackhistoryfoundation.org|
+|Trevor Parks| cyphercryptoconsulting@gmail.com|
+
