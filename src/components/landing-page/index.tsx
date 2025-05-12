@@ -53,7 +53,7 @@ const benefits: BenefitProps[] = [
   },
   {
     title: 'Receive',
-    description: 'Your coins are delivered to your wallet automatically.',
+    description: 'Your coins are delivered to your wallet automatically. We’ll automatically create a wallet for you if you don’t have one.',
     icon: <BarChartIcon className="h-6 w-6" />,
   },
   {
@@ -200,9 +200,6 @@ export function LandingPage() {
 
           <div className="container relative z-1">
             <div className="flex flex-col items-center gap-6 text-center max-w-3xl mx-auto">
-              <Badge variant="outline" className="animate-appear gap-2 bg-black/10 backdrop-blur-sm border-gray-300">
-                <span className="text-gray-900 font-medium">Donate and win!</span>
-              </Badge>
 
               <motion.h1
                 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900"
@@ -220,7 +217,7 @@ export function LandingPage() {
                 transition={{ duration: 0.5, delay: 0.5 }}
               >
                 Every $1 you donate helps preserve Black history, gives you a $TBHF charity coin, and a lifetime entry
-                into our 50/50 raffles! Our goal is to sell 10,000,000,000 coins{' '}
+                into our 50/50 raffles! A winner is chosen every 222,222 coins sold{' '}
               </motion.p>
 
               <motion.div
@@ -229,15 +226,23 @@ export function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <Button size="lg" className="text-lg bg-black hover:bg-gray-900 text-white">
-                  <Link href="/enter">Buy Tickets Now</Link>
+                <Button 
+                  size="lg" 
+                  className="text-lg bg-black hover:bg-gray-900 text-white font-medium shadow-sm hover:shadow-md transition-all duration-300 min-w-[200px]"
+                >
+                  <Link href="/enter" className="flex items-center justify-center w-full">
+                    Buy Charity Coins
+                  </Link>
                 </Button>
 
                 <Button
+                  variant="outline"
                   size="lg"
-                  className="px-4 py-2 font-medium rounded-lg border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 dark:hover:text-white transition-all duration-300 ease-in-out shadow-sm hover:shadow-md focus:ring-2 focus:ring-black/50 hover:text-black dark:focus:ring-white/50 focus:outline-none"
+                  className="text-lg border-2 border-black text-black bg-white hover:bg-black/5 font-medium shadow-sm hover:shadow-md transition-all duration-300 min-w-[200px]"
                 >
-                  <Link href="https://platform.engiven.com/give/2519/widget/2717">Donate without participating</Link>
+                  <Link href="https://platform.engiven.com/give/2519/widget/2717" className="flex items-center justify-center w-full">
+                    Donate Without Participating
+                  </Link>
                 </Button>
               </motion.div>
             </div>
@@ -250,16 +255,14 @@ export function LandingPage() {
               <div>
                 <h2 className="text-3xl font-bold mb-6">About The Black History Foundation</h2>
                 <p className="text-muted-foreground mb-4">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae justo in odio varius vestibulum.
-                  Etiam ac est in nunc convallis ullamcorper nec sit amet eros.
+                  The Black History Foundation is a nonprofit organization dedicated to preserving, protecting, and promoting the rich legacy of Black history in America—both physically and digitally.
                 </p>
                 <p className="text-muted-foreground mb-6">
-                  Phasellus euismod purus eu velit rhoncus, sit amet tincidunt enim tempor. Aliquam erat volutpat. Proin
-                  id eleifend orci, vitae fringilla nulla.
+                  By leveraging technology, we safeguard historical records, stories, and cultural contributions for future generations. Through education, community initiatives, and digital archiving, we ensure that Black history is never lost, forgotten, or erased.
                 </p>
                 <div className="flex gap-4">
                   <Button variant="outline">
-                    <Link href={'https://thbfdn.org'}> Our Charity</Link>
+                    <Link href={'https://tbfoundation.org/'}> Our Charity</Link>
                   </Button>
                   <Button variant="ghost">
                     <Link href={'https://www.tbhfdn.org/about'}> Our Why</Link>
@@ -325,9 +328,9 @@ export function LandingPage() {
                     </div>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold mb-2">Buy Tickets</h3>
+                <h3 className="text-xl font-bold mb-2">Buy Charity Coins</h3>
                 <p className="text-muted-foreground">
-                  Purchase your raffle tickets online. Each ticket costs $10, with bundle discounts available.
+                  Purchase your Charity Coins for $1 each.
                 </p>
               </div>
 
@@ -339,7 +342,7 @@ export function LandingPage() {
                     </div>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold mb-2">Support the Cause</h3>
+                <h3 className="text-xl font-bold mb-2">Support The Cause</h3>
                 <p className="text-muted-foreground">
                   50% of all proceeds go directly to supporting Black history education initiatives.
                 </p>
@@ -353,9 +356,9 @@ export function LandingPage() {
                     </div>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold mb-2">Win Big</h3>
+                <h3 className="text-xl font-bold mb-2">Win A Prize</h3>
                 <p className="text-muted-foreground">
-                  Winners are drawn on July 19th. The remaining 50% of proceeds are distributed as prizes.
+                  Winners are chosen every 222,222 coins that are sold.
                 </p>
               </div>
             </div>
@@ -367,13 +370,15 @@ export function LandingPage() {
             <div className="bg-card border border-border rounded-xl p-8 md:p-12">
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div>
-                  <h2 className="text-3xl font-bold mb-4">Ready to Make a Difference?</h2>
-                  <p className="text-muted-foreground mb-6">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed
-                    cursus ante dapibus diam.
-                  </p>
+                  <h2 className="text-3xl font-bold mb-4">Why donate?</h2>
+                  <ul className="list-disc pl-5 space-y-2 text-muted-foreground mb-6">
+                    <li>Support Black History education, scholarships, and community programs.</li>
+                    <li>Receive $TBHF Charity Coins as a thank-you gift.</li>
+                    <li>Lifetime eligibility for future raffle drawings, so the more you hold, the better your chances.</li>
+                    <li>Transparent, fair, and verifiable raffle drawings.</li>
+                  </ul>
                   <Button size="lg" className="text-lg">
-                    Buy Tickets Now
+                    Buy Charity Coins
                   </Button>
                 </div>
                 <div>
@@ -401,12 +406,12 @@ export function LandingPage() {
       </main>
 
       <footer className="border-t border-border py-12 bg-card/50">
-        <div className="container">
+        <div className="container px-6 md:px-8 max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <HeartIcon className="h-6 w-6 text-primary" />
-                <h3 className="text-lg font-bold">Black History Foundation</h3>
+                <h3 className="text-lg font-bold">The Black History Foundation</h3>
               </div>
               <p className="text-muted-foreground">
                 Supporting education and preservation of Black history for future generations.
@@ -469,8 +474,8 @@ export function LandingPage() {
               <h3 className="font-bold mb-4">Contact</h3>
               <ul className="space-y-2">
                 <li className="text-muted-foreground">info@blackhistoryfoundation.org</li>
-                <li className="text-muted-foreground">(555) 123-4567</li>
-                <li className="text-muted-foreground">123 Education Ave, Atlanta, GA 30303</li>
+                <li className="text-muted-foreground">661-524-6674</li>
+                <li className="text-muted-foreground">30 N. Gould St., STE R, Sheridan, WY 82801</li>
               </ul>
             </div>
           </div>
@@ -478,18 +483,22 @@ export function LandingPage() {
           <Separator className="my-8" />
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">© 2025 The Black History Foundation. All rights reserved.</p>
-            <div className="flex gap-4">
-              <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            <p className="text-sm text-muted-foreground">&copy; 2025 The Black History Foundation. All rights reserved.</p>
+            <div className="flex gap-6">
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Terms of Service
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Cookie Policy
               </Link>
             </div>
+          </div>
+          
+          <div className="mt-6 text-center">
+            <p className="text-xs text-muted-foreground/70">Generated by Black History Foundation</p>
           </div>
         </div>
       </footer>
