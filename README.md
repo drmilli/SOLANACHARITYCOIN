@@ -37,3 +37,9 @@ from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for
 more details.
+
+### Contacts
+
+|Name|Email|
+|:-|:-|
+|Frank Dierolf| frank_dierolf@web.de|
