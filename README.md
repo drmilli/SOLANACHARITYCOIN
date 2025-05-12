@@ -43,3 +43,4 @@ more details.
 |Name|Email|
 |:-|:-|
 |Frank Dierolf| frank_dierolf@web.de|
+|Judith Williams| j.williams@theblackhistoryfoundation.org|
