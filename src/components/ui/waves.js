@@ -4,35 +4,6 @@ import { useRef, useEffect } from 'react'
 
 import { cn } from '@/lib/utils'
 
-interface WavesProps {
-  /**
-   * Color of the wave lines
-   */
-  lineColor?: string
-  /**
-   * Background color of the container
-   */
-  backgroundColor?: string
-  /**
-   * Background image URL
-   */
-  backgroundImage?: string
-  /**
-   * Background image opacity (0-1)
-   */
-  backgroundOpacity?: number
-  waveSpeedX?: number
-  waveSpeedY?: number
-  waveAmpX?: number
-  waveAmpY?: number
-  xGap?: number
-  yGap?: number
-  friction?: number
-  tension?: number
-  maxCursorMove?: number
-  className?: string
-}
-
 class Grad {
   constructor(x, y, z) {
     this.x = x
@@ -123,7 +94,7 @@ export function Waves({
   tension = 0.005,
   maxCursorMove = 100,
   className,
-}: WavesProps) {
+}) {
   const containerRef = useRef(null)
   const canvasRef = useRef(null)
   const ctxRef = useRef(null)
@@ -350,19 +321,7 @@ export function Waves({
       window.removeEventListener('touchmove', onTouchMove)
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [
-    lineColor,
-    backgroundColor,
-    waveSpeedX,
-    waveSpeedY,
-    waveAmpX,
-    waveAmpY,
-    friction,
-    tension,
-    maxCursorMove,
-    xGap,
-    yGap,
-  ])
+  })
 
   return (
     <div

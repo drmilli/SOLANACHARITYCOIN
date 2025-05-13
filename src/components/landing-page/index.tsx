@@ -110,9 +110,6 @@ function HoverRevealImage() {
 
   return (
     <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 1 }}>
-      {/* Base background gradient */}
-
-      {/* Background image with very low opacity */}
       <div className="absolute inset-0 bg-cover bg-center">
         <Waves />
       </div>
@@ -195,7 +192,7 @@ export function LandingPage() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="text-lg border-2 border-black text-black bg-white hover:bg-black/5 font-medium shadow-sm hover:shadow-md transition-all duration-300 min-w-[200px]"
+                  className="text-lg border-2 border-black text-black dark:border-black font-medium shadow-sm hover:shadow-md transition-all duration-300 min-w-[200px]"
                 >
                   <Link
                     href="https://platform.engiven.com/give/2519/widget/2717"
@@ -375,106 +372,6 @@ export function LandingPage() {
           </div>
         </section>
       </main>
-
-      <footer className="border-t border-border py-12 bg-card/50">
-        <div className="container px-6 md:px-8 max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <HeartIcon className="h-6 w-6 text-primary" />
-                <h3 className="text-lg font-bold">The Black History Foundation</h3>
-              </div>
-              <p className="text-muted-foreground">
-                Supporting education and preservation of Black history for future generations.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-bold mb-4">Quick Links</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Programs
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Events
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Donate
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-bold mb-4">Raffle Info</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                    How It Works
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Prizes
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Rules
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Past Winners
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-bold mb-4">Contact</h3>
-              <ul className="space-y-2">
-                <li className="text-muted-foreground">info@blackhistoryfoundation.org</li>
-                <li className="text-muted-foreground">661-524-6674</li>
-                <li className="text-muted-foreground">30 N. Gould St., STE R, Sheridan, WY 82801</li>
-              </ul>
-            </div>
-          </div>
-
-          <Separator className="my-8" />
-
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              &copy; 2025 The Black History Foundation. All rights reserved.
-            </p>
-            <div className="flex gap-6">
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Privacy Policy
-              </Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Terms of Service
-              </Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Cookie Policy
-              </Link>
-            </div>
-          </div>
-
-          <div className="mt-6 text-center">
-            <p className="text-xs text-muted-foreground/70">Generated by Black History Foundation</p>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }
