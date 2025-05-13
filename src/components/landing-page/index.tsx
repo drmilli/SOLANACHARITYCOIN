@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 // Badge import removed to fix lint error
 import { Separator } from '@/components/ui/separator'
 import { useTheme } from 'next-themes'
+import { Waves } from '../ui/waves'
 
 interface ParticipantProps {
   name: string
@@ -54,7 +55,7 @@ const benefits: BenefitProps[] = [
   {
     title: 'Receive',
     description:
-      'Your coins are delivered to your wallet automatically. We’ll automatically create a wallet for you if you don’t have one.',
+      'Your coins are delivered to your wallet automatically. We will automatically create a wallet for you if you do not have one.',
     icon: <BarChartIcon className="h-6 w-6" />,
   },
   {
@@ -76,36 +77,6 @@ function HoverRevealImage() {
     return () => clearTimeout(timer)
   }, [])
 
-  const plasterElements = React.useMemo(() => {
-    return Array.from({ length: 15 }).map((_, i) => {
-      const size = 80 + Math.random() * 100
-      const posX = Math.random() * 100
-      const posY = Math.random() * 100
-      const rotation = Math.random() * 360
-      const delay = Math.random() * 0.5
-      return (
-        <motion.div
-          key={i}
-          className="absolute bg-white rounded-full"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: isInitialized ? 0.5 : 0 }}
-          transition={{ duration: 1.5, delay }}
-          style={{
-            width: size,
-            height: size,
-            left: `${posX}%`,
-            top: `${posY}%`,
-            transform: `rotate(${rotation}deg)`,
-            boxShadow: '0 0 20px 5px rgba(255, 255, 255, 0.2) inset',
-            filter: 'blur(1px)',
-            zIndex: 1,
-          }}
-        />
-      )
-    })
-  }, [isInitialized])
-
-  // Use a blue-tinted image for better visual effect with the site's color scheme
   const imageUrl =
     "url('https://plus.unsplash.com/premium_photo-1664640458531-3c7cca2a9323?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"
 
@@ -140,30 +111,10 @@ function HoverRevealImage() {
   return (
     <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 1 }}>
       {/* Base background gradient */}
-      <div
-        className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-300"
-        style={{
-          opacity: isInitialized ? 0.8 : 0,
-          transition: 'opacity 1s ease-out',
-          zIndex: 0,
-        }}
-      />
 
       {/* Background image with very low opacity */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: imageUrl,
-          opacity: isInitialized ? 0.15 : 0,
-          transition: 'opacity 1s ease-out',
-          zIndex: 1,
-          mixBlendMode: 'overlay',
-        }}
-      />
-
-      {/* Plaster elements */}
-      <div className="absolute inset-0" style={{ zIndex: 2 }}>
-        {plasterElements}
+      <div className="absolute inset-0 bg-cover bg-center">
+        <Waves />
       </div>
 
       {/* Hover reveal spotlight */}
@@ -192,6 +143,12 @@ function HoverRevealImage() {
 
 export function LandingPage() {
   const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // Add useEffect to handle client-side hydration
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -276,13 +233,19 @@ export function LandingPage() {
                 </div>
               </div>
               <div className="w-full h-auto aspect-square max-w-xl mx-auto overflow-hidden rounded-lg">
-                <Image
-                  src={resolvedTheme === 'dark' ? '/dark_mode_image.png' : '/light_mode_image.png'}
-                  alt={`${resolvedTheme} mode image`}
-                  className="w-full h-full object-cover"
-                  width={500}
-                  height={500}
-                />
+                {/* Only render the Image component when mounted (client-side) */}
+                {mounted ? (
+                  <Image
+                    src={resolvedTheme === 'dark' ? '/dark_mode_image.png' : '/light_mode_image.png'}
+                    alt="TBHF image"
+                    className="w-full h-full object-cover"
+                    width={500}
+                    height={500}
+                  />
+                ) : (
+                  // Fallback for server-side rendering
+                  <div className="w-full h-full bg-gray-200" />
+                )}
               </div>
             </div>
           </div>
@@ -394,7 +357,9 @@ export function LandingPage() {
                       {participants.map((participant, index) => (
                         <div key={index} className="flex items-center gap-3">
                           <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                            <Image src={participant.image} alt={participant.name} fill className="object-cover" />
+                            {mounted && (
+                              <Image src={participant.image} alt={participant.name} fill className="object-cover" />
+                            )}
                           </div>
                           <div>
                             <p className="font-medium">{participant.name}</p>
