@@ -37,14 +37,12 @@ pub mod raffle {
         let raffle_state = &mut ctx.accounts.raffle_state;
         let participant = ctx.accounts.participant.key();
 
-        // Check if participant is blacklisted
         for blacklisted in raffle_state.blacklist.iter() {
             if participant == *blacklisted {
                 return Err(ErrorCode::BlacklistedParticipant.into());
             }
         }
 
-        // Transfer SOL to treasury
         let transfer_instruction = solana_program::system_instruction::transfer(
             &ctx.accounts.participant.key(),
             &ctx.accounts.treasury.key(),
@@ -64,7 +62,6 @@ pub mod raffle {
         raffle_state.treasury = ctx.accounts.treasury.key();
         raffle_state.total_sol = raffle_state.total_sol.checked_add(amount).unwrap();
 
-        // Each 0.01 SOL = 1 token
         let tokens = amount / 10_000_000; // 0.01 SOL = 10,000,000 lamports
 
         // Add participant to list if not already present
@@ -85,7 +82,6 @@ pub mod raffle {
             raffle_state.participant_count = raffle_state.participant_count.checked_add(1).unwrap();
         }
 
-        // Check if threshold reached
         if raffle_state.total_sol >= 1_000_000_000_000 && !raffle_state.threshold_reached {
             raffle_state.threshold_reached = true;
         }

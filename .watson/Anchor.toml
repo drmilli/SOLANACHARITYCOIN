@@ -3,13 +3,13 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-raffle = "Raff1eFXd6RxKHKvXNbS8JkPLh3WYw8HXfwGcyuLvjCQ"
+raffle = "3pwsHuESbtUtQ9A9ChHp9y64VTJAEzuRQmxmrEiBLR4d"
 
 [programs.devnet]
-raffle = "Raff1eFXd6RxKHKvXNbS8JkPLh3WYw8HXfwGcyuLvjCQ"
+raffle = "3pwsHuESbtUtQ9A9ChHp9y64VTJAEzuRQmxmrEiBLR4d"
 
 [programs.mainnet]
-raffle = "Raff1eFXd6RxKHKvXNbS8JkPLh3WYw8HXfwGcyuLvjCQ"
+raffle = "3pwsHuESbtUtQ9A9ChHp9y64VTJAEzuRQmxmrEiBLR4d"
 
 [registry]
 url = "https://api.apr.dev"
