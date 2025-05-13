@@ -3,13 +3,13 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-solana_raffle = "Raff1eFXd6RxKHKvXNbS8JkPLh3WYw8HXfwGcyuLvjCQ"
+raffle = "Raff1eFXd6RxKHKvXNbS8JkPLh3WYw8HXfwGcyuLvjCQ"
 
 [programs.devnet]
-solana_raffle = "Raff1eFXd6RxKHKvXNbS8JkPLh3WYw8HXfwGcyuLvjCQ"
+raffle = "Raff1eFXd6RxKHKvXNbS8JkPLh3WYw8HXfwGcyuLvjCQ"
 
 [programs.mainnet]
-solana_raffle = "Raff1eFXd6RxKHKvXNbS8JkPLh3WYw8HXfwGcyuLvjCQ"
+raffle = "Raff1eFXd6RxKHKvXNbS8JkPLh3WYw8HXfwGcyuLvjCQ"
 
 [registry]
 url = "https://api.apr.dev"
