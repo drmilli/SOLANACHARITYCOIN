@@ -6,28 +6,24 @@ import { createSolanaDevnet, createSolanaLocalnet, createWalletUiConfig, WalletU
 import '@wallet-ui/tailwind/index.css'
 
 // Import the original components with dynamic imports
-const OriginalWalletButton = dynamic(
-  async () => (await import('@wallet-ui/react')).WalletUiDropdown,
-  { ssr: false }
-)
+const OriginalWalletButton = dynamic(async () => (await import('@wallet-ui/react')).WalletUiDropdown, { ssr: false })
 
-const OriginalClusterButton = dynamic(
-  async () => (await import('@wallet-ui/react')).WalletUiClusterDropdown,
-  { ssr: false }
-)
+const OriginalClusterButton = dynamic(async () => (await import('@wallet-ui/react')).WalletUiClusterDropdown, {
+  ssr: false,
+})
 
 // Create wrapper components with className support
 type WalletButtonProps = {
-  size?: "sm" | "md" | "lg";
-  label?: string;
-  className?: string;
+  size?: 'sm' | 'md' | 'lg'
+  label?: string
+  className?: string
 }
 
 type ClusterButtonProps = {
-  size?: "sm" | "md" | "lg";
-  className?: string;
-  showIndicator?: boolean;
-  buttonProps?: any;
+  size?: 'sm' | 'md' | 'lg'
+  className?: string
+  showIndicator?: boolean
+  buttonProps?: React.ButtonHTMLAttributes<HTMLButtonElement>
 }
 
 // Wrapper components that handle className

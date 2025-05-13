@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 import { HeartIcon, BarChartIcon, GiftIcon, UsersIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+// Badge import removed to fix lint error
 import { Separator } from '@/components/ui/separator'
 import { useTheme } from 'next-themes'
 
@@ -53,7 +53,8 @@ const benefits: BenefitProps[] = [
   },
   {
     title: 'Receive',
-    description: 'Your coins are delivered to your wallet automatically. We’ll automatically create a wallet for you if you don’t have one.',
+    description:
+      'Your coins are delivered to your wallet automatically. We’ll automatically create a wallet for you if you don’t have one.',
     icon: <BarChartIcon className="h-6 w-6" />,
   },
   {
@@ -200,7 +201,6 @@ export function LandingPage() {
 
           <div className="container relative z-1">
             <div className="flex flex-col items-center gap-6 text-center max-w-3xl mx-auto">
-
               <motion.h1
                 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900"
                 initial={{ opacity: 0, y: 20 }}
@@ -226,8 +226,8 @@ export function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="text-lg bg-black hover:bg-gray-900 text-white font-medium shadow-sm hover:shadow-md transition-all duration-300 min-w-[200px]"
                 >
                   <Link href="/enter" className="flex items-center justify-center w-full">
@@ -240,7 +240,10 @@ export function LandingPage() {
                   size="lg"
                   className="text-lg border-2 border-black text-black bg-white hover:bg-black/5 font-medium shadow-sm hover:shadow-md transition-all duration-300 min-w-[200px]"
                 >
-                  <Link href="https://platform.engiven.com/give/2519/widget/2717" className="flex items-center justify-center w-full">
+                  <Link
+                    href="https://platform.engiven.com/give/2519/widget/2717"
+                    className="flex items-center justify-center w-full"
+                  >
                     Donate Without Participating
                   </Link>
                 </Button>
@@ -255,10 +258,13 @@ export function LandingPage() {
               <div>
                 <h2 className="text-3xl font-bold mb-6">About The Black History Foundation</h2>
                 <p className="text-muted-foreground mb-4">
-                  The Black History Foundation is a nonprofit organization dedicated to preserving, protecting, and promoting the rich legacy of Black history in America—both physically and digitally.
+                  The Black History Foundation is a nonprofit organization dedicated to preserving, protecting, and
+                  promoting the rich legacy of Black history in America—both physically and digitally.
                 </p>
                 <p className="text-muted-foreground mb-6">
-                  By leveraging technology, we safeguard historical records, stories, and cultural contributions for future generations. Through education, community initiatives, and digital archiving, we ensure that Black history is never lost, forgotten, or erased.
+                  By leveraging technology, we safeguard historical records, stories, and cultural contributions for
+                  future generations. Through education, community initiatives, and digital archiving, we ensure that
+                  Black history is never lost, forgotten, or erased.
                 </p>
                 <div className="flex gap-4">
                   <Button variant="outline">
@@ -270,10 +276,12 @@ export function LandingPage() {
                 </div>
               </div>
               <div className="w-full h-auto aspect-square max-w-xl mx-auto overflow-hidden rounded-lg">
-                <img
+                <Image
                   src={resolvedTheme === 'dark' ? '/dark_mode_image.png' : '/light_mode_image.png'}
                   alt={`${resolvedTheme} mode image`}
                   className="w-full h-full object-cover"
+                  width={500}
+                  height={500}
                 />
               </div>
             </div>
@@ -329,9 +337,7 @@ export function LandingPage() {
                   </div>
                 </div>
                 <h3 className="text-xl font-bold mb-2">Buy Charity Coins</h3>
-                <p className="text-muted-foreground">
-                  Purchase your Charity Coins for $1 each.
-                </p>
+                <p className="text-muted-foreground">Purchase your Charity Coins for $1 each.</p>
               </div>
 
               <div className="flex flex-col items-center text-center">
@@ -357,9 +363,7 @@ export function LandingPage() {
                   </div>
                 </div>
                 <h3 className="text-xl font-bold mb-2">Win A Prize</h3>
-                <p className="text-muted-foreground">
-                  Winners are chosen every 222,222 coins that are sold.
-                </p>
+                <p className="text-muted-foreground">Winners are chosen every 222,222 coins that are sold.</p>
               </div>
             </div>
           </div>
@@ -374,7 +378,9 @@ export function LandingPage() {
                   <ul className="list-disc pl-5 space-y-2 text-muted-foreground mb-6">
                     <li>Support Black History education, scholarships, and community programs.</li>
                     <li>Receive $TBHF Charity Coins as a thank-you gift.</li>
-                    <li>Lifetime eligibility for future raffle drawings, so the more you hold, the better your chances.</li>
+                    <li>
+                      Lifetime eligibility for future raffle drawings, so the more you hold, the better your chances.
+                    </li>
                     <li>Transparent, fair, and verifiable raffle drawings.</li>
                   </ul>
                   <Button size="lg" className="text-lg">
@@ -483,7 +489,9 @@ export function LandingPage() {
           <Separator className="my-8" />
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">&copy; 2025 The Black History Foundation. All rights reserved.</p>
+            <p className="text-sm text-muted-foreground">
+              &copy; 2025 The Black History Foundation. All rights reserved.
+            </p>
             <div className="flex gap-6">
               <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Privacy Policy
@@ -496,7 +504,7 @@ export function LandingPage() {
               </Link>
             </div>
           </div>
-          
+
           <div className="mt-6 text-center">
             <p className="text-xs text-muted-foreground/70">Generated by Black History Foundation</p>
           </div>

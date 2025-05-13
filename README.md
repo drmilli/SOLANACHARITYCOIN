@@ -40,9 +40,8 @@ more details.
 
 ### Contacts
 
-|Name|Email|
-|:-|:-|
-|Frank Dierolf| frank_dierolf@web.de|
-|Judith Williams| j.williams@theblackhistoryfoundation.org|
-|Trevor Parks| cyphercryptoconsulting@gmail.com|
-
+| Name            | Email                                    |
+| :-------------- | :--------------------------------------- |
+| Frank Dierolf   | frank_dierolf@web.de                     |
+| Judith Williams | j.williams@theblackhistoryfoundation.org |
+| Trevor Parks    | cyphercryptoconsulting@gmail.com         |

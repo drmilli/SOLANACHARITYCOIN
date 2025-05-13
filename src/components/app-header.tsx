@@ -46,24 +46,22 @@ export function AppHeader({ links = [] }: { links: { label: string; path: string
         </div>
 
         <div className="hidden md:flex items-center gap-5">
-          <WalletButton 
-            size="sm" 
-            className="shadow hover:shadow-md bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md transition-all duration-200 hover:translate-y-[-1px]" 
+          <WalletButton
+            size="sm"
+            className="shadow hover:shadow-md bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md transition-all duration-200 hover:translate-y-[-1px]"
           />
-          <ClusterButton 
-            size="sm" 
-            className="shadow hover:shadow-md bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md transition-all duration-200 hover:translate-y-[-1px]" 
+          <ClusterButton
+            size="sm"
+            className="shadow hover:shadow-md bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md transition-all duration-200 hover:translate-y-[-1px]"
           />
-          <ThemeSelect 
-            className="shadow hover:shadow-md bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md transition-all duration-200 hover:translate-y-[-1px]" 
-          />
+          <ThemeSelect className="shadow hover:shadow-md bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md transition-all duration-200 hover:translate-y-[-1px]" />
         </div>
 
         {/* Mobile menu button */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="md:hidden text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors duration-200" 
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors duration-200"
           onClick={() => setShowMenu(!showMenu)}
         >
           {showMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
