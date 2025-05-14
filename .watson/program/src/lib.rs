@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
-use solana_program::hash::{hash, Hash};
+use solana_program::hash::hash;
 use std::convert::TryInto;
 use std::str::FromStr;
 

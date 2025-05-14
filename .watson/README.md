@@ -93,7 +93,7 @@ const treasuryPDA = await PublicKey.findProgramAddressSync(
 )[0];
 
 const tx = await program.methods
-  .donate(new BN(0.5 * LAMPORTS_PER_SOL)) // 0.5 SOL = 50 tokens
+  .donate(new BN(0.5 * LAMPORTS_PER_SOL))
   .accounts({
     raffleState: raffleStateAccount.publicKey,
     participant: userWallet.publicKey,
