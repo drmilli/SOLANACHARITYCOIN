@@ -15,7 +15,7 @@ raffle = "3pwsHuESbtUtQ9A9ChHp9y64VTJAEzuRQmxmrEiBLR4d"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

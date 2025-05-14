@@ -1,0 +1,11 @@
+/home/babes/Desktop/solana/.watson/program/target/debug/deps/libed25519_dalek-720575e716742201.rmeta: /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/lib.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/constants.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/keypair.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/errors.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/public.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/secret.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/signature.rs
+
+/home/babes/Desktop/solana/.watson/program/target/debug/deps/ed25519_dalek-720575e716742201.d: /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/lib.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/constants.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/keypair.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/errors.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/public.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/secret.rs /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/signature.rs
+
+/home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/lib.rs:
+/home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/constants.rs:
+/home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/keypair.rs:
+/home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/errors.rs:
+/home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/public.rs:
+/home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/secret.rs:
+/home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ed25519-dalek-1.0.1/src/signature.rs:

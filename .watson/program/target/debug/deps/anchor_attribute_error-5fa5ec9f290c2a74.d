@@ -1,0 +1,5 @@
+/home/babes/Desktop/solana/.watson/program/target/debug/deps/libanchor_attribute_error-5fa5ec9f290c2a74.so: /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anchor-attribute-error-0.28.0/src/lib.rs
+
+/home/babes/Desktop/solana/.watson/program/target/debug/deps/anchor_attribute_error-5fa5ec9f290c2a74.d: /home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anchor-attribute-error-0.28.0/src/lib.rs
+
+/home/babes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anchor-attribute-error-0.28.0/src/lib.rs:
