@@ -5,119 +5,42 @@
     {
       "name": "initialize",
       "accounts": [
-        {
-          "name": "raffleState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "admin",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
+        { "name": "raffleState", "isMut": true, "isSigner": true },
+        { "name": "admin", "isMut": true, "isSigner": true },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
       ],
       "args": []
     },
     {
       "name": "donate",
       "accounts": [
-        {
-          "name": "raffleState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "participant",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "treasury",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
+        { "name": "raffleState", "isMut": true, "isSigner": false },
+        { "name": "participant", "isMut": true, "isSigner": true },
+        { "name": "treasury", "isMut": true, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
       ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ]
+      "args": [{ "name": "amount", "type": "u64" }]
     },
     {
       "name": "selectWinner",
       "accounts": [
-        {
-          "name": "raffleState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "admin",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "treasury",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "winnerAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "recentSlotHash",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
+        { "name": "raffleState", "isMut": true, "isSigner": false },
+        { "name": "admin", "isMut": true, "isSigner": true },
+        { "name": "treasury", "isMut": true, "isSigner": false },
+        { "name": "winnerAccount", "isMut": true, "isSigner": false },
+        { "name": "recentSlotHash", "isMut": false, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
       ],
       "args": []
     },
     {
       "name": "withdrawFunds",
       "accounts": [
-        {
-          "name": "raffleState",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "admin",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "treasury",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "payoutWallet",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
+        { "name": "raffleState", "isMut": true, "isSigner": false },
+        { "name": "admin", "isMut": true, "isSigner": true },
+        { "name": "treasury", "isMut": true, "isSigner": false },
+        { "name": "payoutWallet", "isMut": true, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
       ],
       "args": []
     }
@@ -128,64 +51,19 @@
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "admin",
-            "type": "publicKey"
-          },
-          {
-            "name": "treasury",
-            "type": "publicKey"
-          },
-          {
-            "name": "adminAuth1",
-            "type": "publicKey"
-          },
-          {
-            "name": "adminAuth2",
-            "type": "publicKey"
-          },
-          {
-            "name": "adminAuth3",
-            "type": "publicKey"
-          },
-          {
-            "name": "payoutWallet",
-            "type": "publicKey"
-          },
-          {
-            "name": "totalSol",
-            "type": "u64"
-          },
-          {
-            "name": "thresholdReached",
-            "type": "bool"
-          },
-          {
-            "name": "winnerSelected",
-            "type": "bool"
-          },
-          {
-            "name": "winner",
-            "type": "publicKey"
-          },
-          {
-            "name": "participants",
-            "type": {
-              "vec": {
-                "defined": "Participant"
-              }
-            }
-          },
-          {
-            "name": "participantCount",
-            "type": "u64"
-          },
-          {
-            "name": "blacklist",
-            "type": {
-              "vec": "publicKey"
-            }
-          }
+          { "name": "admin", "type": "publicKey" },
+          { "name": "treasury", "type": "publicKey" },
+          { "name": "adminAuth1", "type": "publicKey" },
+          { "name": "adminAuth2", "type": "publicKey" },
+          { "name": "adminAuth3", "type": "publicKey" },
+          { "name": "payoutWallet", "type": "publicKey" },
+          { "name": "totalSol", "type": "u64" },
+          { "name": "thresholdReached", "type": "bool" },
+          { "name": "winnerSelected", "type": "bool" },
+          { "name": "winner", "type": "publicKey" },
+          { "name": "participants", "type": { "vec": { "defined": "Participant" } } },
+          { "name": "participantCount", "type": "u64" },
+          { "name": "blacklist", "type": { "vec": "publicKey" } }
         ]
       }
     }
@@ -196,38 +74,16 @@
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "wallet",
-            "type": "publicKey"
-          },
-          {
-            "name": "tokens",
-            "type": "u64"
-          }
+          { "name": "wallet", "type": "publicKey" },
+          { "name": "tokens", "type": "u64" }
         ]
       }
     }
   ],
   "errors": [
-    {
-      "code": 6000,
-      "name": "BlacklistedParticipant",
-      "msg": "Participant is blacklisted"
-    },
-    {
-      "code": 6001,
-      "name": "ThresholdNotReached",
-      "msg": "Threshold not reached"
-    },
-    {
-      "code": 6002,
-      "name": "WinnerAlreadySelected",
-      "msg": "Winner already selected"
-    },
-    {
-      "code": 6003,
-      "name": "Unauthorized",
-      "msg": "Unauthorized access"
-    }
+    { "code": 6000, "name": "BlacklistedParticipant", "msg": "Participant is blacklisted" },
+    { "code": 6001, "name": "ThresholdNotReached", "msg": "Threshold not reached" },
+    { "code": 6002, "name": "WinnerAlreadySelected", "msg": "Winner already selected" },
+    { "code": 6003, "name": "Unauthorized", "msg": "Unauthorized access" }
   ]
 }
