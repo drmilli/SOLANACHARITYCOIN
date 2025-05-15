@@ -10,10 +10,10 @@ import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adap
 // Import styles but no wallet buttons
 import '@solana/wallet-adapter-react-ui/styles.css'
 
-// Import your IDL - adjust the path as needed
-import idl from '../../../.watson/target/idl/solana_raffle.json'
+// import idl from '../../../.watson/target/idl/solana_raffle.json'
+import idl from '../../../raffle/target/idl/raffle.json'
 
-const programId = new PublicKey('3pwsHuESbtUtQ9A9ChHp9y64VTJAEzuRQmxmrEiBLR4d')
+const programId = new PublicKey('CpG92WPSAiiJLZXdTBGBGzQDoj2NTfsLwUoiaYtqJnx7')
 
 // Function to find the treasury PDA
 const findTreasuryPDA = (programId: PublicKey) => {
@@ -188,8 +188,8 @@ const RaffleContent: React.FC = () => {
         raffleState: raffleAccount.toString(),
         participant: wallet.publicKey.toString(),
         treasury: treasury.toString(),
-        amount: amountLamports.toString()
-      });
+        amount: amountLamports.toString(),
+      })
 
       // Call the donate instruction
       const tx = await program.methods
@@ -201,7 +201,7 @@ const RaffleContent: React.FC = () => {
           systemProgram: SystemProgram.programId,
         })
         .rpc({
-          commitment: 'confirmed'  // Ensure the transaction is confirmed
+          commitment: 'confirmed', // Ensure the transaction is confirmed
         })
 
       // Success message with transaction signature
@@ -252,13 +252,11 @@ const RaffleContent: React.FC = () => {
 
       // Get the slot hashes sysvar account
       const recentSlotHashPubkey = new PublicKey('SysvarS1otHashes111111111111111111111111111')
-      
+
       // Since the winner account is determined by the program, we can use any account
       // In this case, we're using a default program-derived winner account to comply with the IDL
       // The actual winner will be determined by the program logic
-      const winnerAccount = raffleState.participants.length > 0 
-        ? raffleState.participants[0].wallet 
-        : wallet.publicKey;
+      const winnerAccount = raffleState.participants.length > 0 ? raffleState.participants[0].wallet : wallet.publicKey
 
       // Call the selectWinner instruction
       const tx = await program.methods
@@ -283,7 +281,7 @@ const RaffleContent: React.FC = () => {
       }, 2000)
     } catch (error) {
       console.error('Error selecting winner:', error)
-      
+
       // Provide more specific error messages based on the error type
       if (error instanceof Error) {
         if (error.message.includes('Threshold not reached')) {
@@ -291,14 +289,16 @@ const RaffleContent: React.FC = () => {
         } else if (error.message.includes('Winner already selected')) {
           setStatusMessage(`Error: A winner has already been selected for this raffle.`)
         } else if (error.message.includes('Unauthorized')) {
-          setStatusMessage(`Error: Only the admin wallet (${raffleState.admin.toString().substring(0, 8)}...) can select a winner.`)
+          setStatusMessage(
+            `Error: Only the admin wallet (${raffleState.admin.toString().substring(0, 8)}...) can select a winner.`,
+          )
         } else {
           setStatusMessage(`Error: ${error.message}`)
         }
       } else {
         setStatusMessage(`Error: ${String(error)}`)
       }
-      
+
       setLoading(false)
     }
   }
@@ -315,7 +315,7 @@ const RaffleContent: React.FC = () => {
 
       // Get the payout wallet from the raffle state
       // Fixed payout wallet from the program
-      const payoutWallet = raffleState.payoutWallet;
+      const payoutWallet = raffleState.payoutWallet
 
       // Log info for debugging
       console.log({
@@ -327,7 +327,7 @@ const RaffleContent: React.FC = () => {
         isAdminAuth1: raffleState.adminAuth1.equals(wallet.publicKey),
         isAdminAuth2: raffleState.adminAuth2.equals(wallet.publicKey),
         isAdminAuth3: raffleState.adminAuth3.equals(wallet.publicKey),
-      });
+      })
 
       // Call the withdrawFunds instruction
       const tx = await program.methods
@@ -340,9 +340,9 @@ const RaffleContent: React.FC = () => {
           systemProgram: SystemProgram.programId,
         })
         .signers([]) // No additional signers required
-        .rpc({ 
-          commitment: 'confirmed',    // Ensure the transaction is confirmed
-          skipPreflight: true         // Skip preflight checks to debug any issues
+        .rpc({
+          commitment: 'confirmed', // Ensure the transaction is confirmed
+          skipPreflight: true, // Skip preflight checks to debug any issues
         })
 
       setStatusMessage(`Funds withdrawn successfully! Transaction: ${tx.substring(0, 8)}...`)
@@ -354,11 +354,13 @@ const RaffleContent: React.FC = () => {
       }, 2000)
     } catch (error) {
       console.error('Error withdrawing funds:', error)
-      
+
       // Provide more specific error messages based on the error type
       if (error instanceof Error) {
         if (error.message.includes('Unauthorized')) {
-          setStatusMessage(`Error: You're not authorized to withdraw funds. Only admin or authorized wallets can withdraw.`)
+          setStatusMessage(
+            `Error: You're not authorized to withdraw funds. Only admin or authorized wallets can withdraw.`,
+          )
         } else if (error.message.includes('custom program error: 0x0')) {
           setStatusMessage(`Error: This transaction would leave the treasury account with insufficient SOL.`)
         } else {
@@ -367,7 +369,7 @@ const RaffleContent: React.FC = () => {
       } else {
         setStatusMessage(`Error: ${String(error)}`)
       }
-      
+
       setLoading(false)
     }
   }
@@ -381,9 +383,9 @@ const RaffleContent: React.FC = () => {
 
       // Generate a new keypair for the raffle state account
       const raffleKeypair = web3.Keypair.generate()
-      
-      console.log('Initializing raffle with state account:', raffleKeypair.publicKey.toString());
-      
+
+      console.log('Initializing raffle with state account:', raffleKeypair.publicKey.toString())
+
       // Call the initialize instruction
       const tx = await program.methods
         .initialize()
@@ -392,10 +394,10 @@ const RaffleContent: React.FC = () => {
           admin: wallet.publicKey,
           systemProgram: SystemProgram.programId,
         })
-        .signers([raffleKeypair]) // Include the raffle keypair as a signer 
-        .rpc({ 
+        .signers([raffleKeypair]) // Include the raffle keypair as a signer
+        .rpc({
           commitment: 'confirmed',
-          skipPreflight: false
+          skipPreflight: false,
         })
 
       setStatusMessage(`Raffle initialized successfully! Transaction: ${tx.substring(0, 8)}...`)
@@ -405,15 +407,14 @@ const RaffleContent: React.FC = () => {
       setTimeout(async () => {
         // Fetch the updated list of raffle accounts
         await fetchRaffleAccounts(program)
-        
+
         // Set the newly created raffle as the selected one
         setRaffleAccount(raffleKeypair.publicKey)
         setSelectedRaffle(raffleKeypair.publicKey.toString())
-      }, 2000);
-      
+      }, 2000)
     } catch (error) {
       console.error('Error initializing raffle:', error)
-      
+
       if (error instanceof Error) {
         // More specific error messages for initialization errors
         if (error.message.includes('insufficient funds')) {
@@ -426,7 +427,7 @@ const RaffleContent: React.FC = () => {
       } else {
         setStatusMessage(`Error: ${String(error)}`)
       }
-      
+
       setLoading(false)
     }
   }
@@ -831,34 +832,53 @@ const RaffleContent: React.FC = () => {
           {raffleState && wallet.publicKey && isAdmin && (
             <div className="mb-6 p-4 bg-purple-50 rounded border border-purple-200">
               <h2 className="text-xl font-semibold mb-2 text-purple-800">Admin Control Panel</h2>
-              
+
               <div className="bg-white p-4 rounded shadow mb-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="mb-1"><strong className="text-purple-700">Admin:</strong> {raffleState.admin.toString().substring(0, 8)}...</p>
-                    <p className="mb-1"><strong className="text-purple-700">Treasury:</strong> {raffleState.treasury.toString().substring(0, 8)}...</p>
-                    <p className="mb-1"><strong className="text-purple-700">Payout Wallet:</strong> {raffleState.payoutWallet.toString().substring(0, 8)}...</p>
+                    <p className="mb-1">
+                      <strong className="text-purple-700">Admin:</strong> {raffleState.admin.toString().substring(0, 8)}
+                      ...
+                    </p>
+                    <p className="mb-1">
+                      <strong className="text-purple-700">Treasury:</strong>{' '}
+                      {raffleState.treasury.toString().substring(0, 8)}...
+                    </p>
+                    <p className="mb-1">
+                      <strong className="text-purple-700">Payout Wallet:</strong>{' '}
+                      {raffleState.payoutWallet.toString().substring(0, 8)}...
+                    </p>
                   </div>
                   <div>
                     <p className="mb-1">
-                      <strong className="text-purple-700">Your Role:</strong> 
+                      <strong className="text-purple-700">Your Role:</strong>
                       <span className="ml-1 px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                         {raffleState.admin.equals(wallet.publicKey) ? 'Primary Admin' : 'Admin Authority'}
                       </span>
                     </p>
                     <p className="mb-1">
-                      <strong className="text-purple-700">Can Select Winner:</strong> 
-                      <span className={`ml-1 px-2 py-0.5 rounded text-xs font-medium ${
-                        !raffleState.winnerSelected && raffleState.thresholdReached && raffleState.admin.equals(wallet.publicKey) 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {!raffleState.winnerSelected && raffleState.thresholdReached && raffleState.admin.equals(wallet.publicKey) ? 'Yes' : 'No'}
+                      <strong className="text-purple-700">Can Select Winner:</strong>
+                      <span
+                        className={`ml-1 px-2 py-0.5 rounded text-xs font-medium ${
+                          !raffleState.winnerSelected &&
+                          raffleState.thresholdReached &&
+                          raffleState.admin.equals(wallet.publicKey)
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {!raffleState.winnerSelected &&
+                        raffleState.thresholdReached &&
+                        raffleState.admin.equals(wallet.publicKey)
+                          ? 'Yes'
+                          : 'No'}
                       </span>
                     </p>
                     <p className="mb-1">
-                      <strong className="text-purple-700">Can Withdraw:</strong> 
-                      <span className="ml-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Yes</span>
+                      <strong className="text-purple-700">Can Withdraw:</strong>
+                      <span className="ml-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                        Yes
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -869,20 +889,27 @@ const RaffleContent: React.FC = () => {
                 <div className="flex flex-wrap gap-4">
                   <button
                     className={`px-4 py-2 rounded text-white ${
-                      !raffleState.winnerSelected && raffleState.thresholdReached && raffleState.admin.equals(wallet.publicKey)
+                      !raffleState.winnerSelected &&
+                      raffleState.thresholdReached &&
+                      raffleState.admin.equals(wallet.publicKey)
                         ? 'bg-purple-500 hover:bg-purple-600'
                         : 'bg-purple-300 cursor-not-allowed'
                     }`}
                     onClick={selectWinner}
-                    disabled={loading || raffleState.winnerSelected || !raffleState.thresholdReached || !raffleState.admin.equals(wallet.publicKey)}
+                    disabled={
+                      loading ||
+                      raffleState.winnerSelected ||
+                      !raffleState.thresholdReached ||
+                      !raffleState.admin.equals(wallet.publicKey)
+                    }
                     title={
                       raffleState.winnerSelected
                         ? 'Winner has already been selected'
                         : !raffleState.thresholdReached
-                        ? 'Threshold not reached'
-                        : !raffleState.admin.equals(wallet.publicKey)
-                        ? 'Only primary admin can select winner'
-                        : 'Select a winner for this raffle'
+                          ? 'Threshold not reached'
+                          : !raffleState.admin.equals(wallet.publicKey)
+                            ? 'Only primary admin can select winner'
+                            : 'Select a winner for this raffle'
                     }
                   >
                     Select Winner
@@ -899,8 +926,14 @@ const RaffleContent: React.FC = () => {
                 <div className="mt-3 text-xs text-gray-500">
                   <ul className="list-disc pl-5 space-y-1">
                     <li>Selecting a winner requires the threshold of {THRESHOLD_SOL} SOL to be reached.</li>
-                    <li>Only the primary admin wallet can select a winner. Admin authorities can only withdraw funds.</li>
-                    <li>Withdrawing funds will transfer the treasury balance to {raffleState.payoutWallet.toString().substring(0, 4)}...{raffleState.payoutWallet.toString().substring(raffleState.payoutWallet.toString().length - 4)}</li>
+                    <li>
+                      Only the primary admin wallet can select a winner. Admin authorities can only withdraw funds.
+                    </li>
+                    <li>
+                      Withdrawing funds will transfer the treasury balance to{' '}
+                      {raffleState.payoutWallet.toString().substring(0, 4)}...
+                      {raffleState.payoutWallet.toString().substring(raffleState.payoutWallet.toString().length - 4)}
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -914,7 +947,7 @@ const RaffleContent: React.FC = () => {
                     Share the raffle link with potential participants to reach the threshold.
                   </p>
                   <div className="mt-2 w-full bg-blue-200 rounded-full h-2.5">
-                    <div 
+                    <div
                       className="bg-blue-600 h-2.5 rounded-full"
                       style={{ width: `${progressToThreshold(raffleState.totalSol)}%` }}
                     ></div>
@@ -931,12 +964,14 @@ const RaffleContent: React.FC = () => {
                         <strong>Winner:</strong> {raffleState.winner.toString().substring(0, 8)}...
                       </p>
                       <p className="text-sm text-green-700 mb-1">
-                        <strong>Prize Amount:</strong> {formatSOL(raffleState.totalSol ? new BN(raffleState.totalSol.toNumber() / 2) : new BN(0))} SOL
+                        <strong>Prize Amount:</strong>{' '}
+                        {formatSOL(raffleState.totalSol ? new BN(raffleState.totalSol.toNumber() / 2) : new BN(0))} SOL
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-green-700">
-                        50% of the funds have been automatically transferred to the winner. The remaining 50% can be withdrawn to the designated payout wallet.
+                        50% of the funds have been automatically transferred to the winner. The remaining 50% can be
+                        withdrawn to the designated payout wallet.
                       </p>
                     </div>
                   </div>
@@ -1026,9 +1061,7 @@ const RaffleContent: React.FC = () => {
           <p className="text-gray-700 mb-3">
             Please connect your Solana wallet using the wallet button in the navbar to interact with the raffle.
           </p>
-          <p className="text-sm text-gray-600">
-            Make sure your wallet is connected to the Solana Devnet for testing.
-          </p>
+          <p className="text-sm text-gray-600">Make sure your wallet is connected to the Solana Devnet for testing.</p>
         </div>
       )}
     </div>

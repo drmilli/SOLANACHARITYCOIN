@@ -1,9 +1,10 @@
 use anchor_lang::prelude::*;
-use solana_program::hash::hash;
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
+use solana_program::hash::{hash, Hash};
 use std::convert::TryInto;
 use std::str::FromStr;
 
-declare_id!("3pwsHuESbtUtQ9A9ChHp9y64VTJAEzuRQmxmrEiBLR4d");
+declare_id!("CpG92WPSAiiJLZXdTBGBGzQDoj2NTfsLwUoiaYtqJnx7");
 
 #[program]
 pub mod raffle {
@@ -65,7 +66,7 @@ pub mod raffle {
 
         // Add participant to list if not already present
         let mut exists = false;
-        for (_i, p) in raffle_state.participants.iter_mut().enumerate() {
+        for (i, p) in raffle_state.participants.iter_mut().enumerate() {
             if p.wallet == participant {
                 p.tokens = p.tokens.checked_add(tokens).unwrap();
                 exists = true;
@@ -162,7 +163,7 @@ pub mod raffle {
                 ctx.accounts.winner_account.to_account_info(),
                 ctx.accounts.system_program.to_account_info(),
             ],
-            &[&[b"treasury", &[*ctx.bumps.get("treasury").unwrap()]]],
+            &[&[b"treasury", &[ctx.bumps.treasury]]],
         )?;
 
         Ok(())
@@ -197,7 +198,7 @@ pub mod raffle {
                 ctx.accounts.payout_wallet.to_account_info(),
                 ctx.accounts.system_program.to_account_info(),
             ],
-            &[&[b"treasury", &[*ctx.bumps.get("treasury").unwrap()]]],
+            &[&[b"treasury", &[ctx.bumps.treasury]]],
         )?;
 
         Ok(())
@@ -228,7 +229,6 @@ pub struct Donate<'info> {
         seeds = [b"treasury"],
         bump,
     )]
-    /// CHECK: This is a PDA that will hold the treasury SOL
     pub treasury: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
