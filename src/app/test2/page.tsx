@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Connection, PublicKey, clusterApiUrl, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js'
-import { Program, BN, AnchorProvider } from '@project-serum/anchor'
+import { Connection, PublicKey, clusterApiUrl, SystemProgram, LAMPORTS_PER_SOL, SYSVAR_SLOT_HASHES_PUBKEY } from '@solana/web3.js'
+import { Program, BN, AnchorProvider, web3 } from '@project-serum/anchor'
 import { useWallet, ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui'
@@ -249,6 +249,79 @@ const SolanaRaffleApp = () => {
     }
   }
 
+  const handleCreateRaffle = async () => {
+    if (!wallet.connected || !wallet.publicKey) {
+      console.error('Wallet not connected')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const program = getProgram()
+
+      // Generate a new keypair for the raffle state account
+      const raffleStateAccount = web3.Keypair.generate()
+      console.log('Creating new raffle with address:', raffleStateAccount.publicKey.toString())
+
+      const tx = await program.methods
+        .initialize()
+        .accounts({
+          raffleState: raffleStateAccount.publicKey,
+          admin: wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([raffleStateAccount])
+        .rpc()
+
+      console.log('Raffle created successfully:', tx)
+      await fetchRaffleState()
+    } catch (error) {
+      console.error('Error creating raffle:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSelectWinner = async () => {
+    if (!wallet.connected || !wallet.publicKey || !selectedRaffle) {
+      console.error('Wallet not connected or no raffle selected')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const program = getProgram()
+
+      const [treasuryPDA] = findTreasuryPDA(programId)
+      const raffleStateAddress = new PublicKey(selectedRaffle)
+      const selectedRaffleState = raffles.find(r => r.publicKey.toString() === selectedRaffle)
+
+      if (!selectedRaffleState) {
+        throw new Error('Selected raffle not found')
+      }
+
+      // Use recent slot hash for randomness
+      const tx = await program.methods
+        .selectWinner()
+        .accounts({
+          raffleState: raffleStateAddress,
+          admin: wallet.publicKey,
+          treasury: treasuryPDA,
+          winnerAccount: selectedRaffleState.account.participants[0]?.wallet || wallet.publicKey, // Fallback to admin if no participants
+          recentSlotHash: SYSVAR_SLOT_HASHES_PUBKEY,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc()
+
+      console.log('Winner selected successfully:', tx)
+      await fetchRaffleState()
+    } catch (error) {
+      console.error('Error selecting winner:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleWithdraw = async () => {
     if (!wallet.connected || !wallet.publicKey || !selectedRaffle) {
       console.error('Wallet not connected or no raffle selected')
@@ -261,7 +334,7 @@ const SolanaRaffleApp = () => {
 
       const [treasuryPDA] = findTreasuryPDA(programId)
       const raffleStateAddress = new PublicKey(selectedRaffle)
-      const selectedRaffleState = raffles.find((r) => r.publicKey.toString() === selectedRaffle)
+      const selectedRaffleState = raffles.find(r => r.publicKey.toString() === selectedRaffle)
 
       if (!selectedRaffleState) {
         throw new Error('Selected raffle not found')
@@ -387,20 +460,56 @@ const SolanaRaffleApp = () => {
               {isAdmin && (
                 <div style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '4px', marginBottom: '20px' }}>
                   <h3>Admin Actions</h3>
-                  <button
-                    onClick={handleWithdraw}
-                    disabled={loading}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#d32f2f',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    {loading ? 'Processing...' : 'Withdraw Funds'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={handleCreateRaffle}
+                      disabled={loading}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#4caf50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {loading ? 'Processing...' : 'Create New Raffle'}
+                    </button>
+                    
+                    {selectedRaffle && (
+                      <>
+                        <button
+                          onClick={handleSelectWinner}
+                          disabled={loading}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#2196f3',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {loading ? 'Processing...' : 'Select Winner'}
+                        </button>
+                        
+                        <button
+                          onClick={handleWithdraw}
+                          disabled={loading}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#d32f2f',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {loading ? 'Processing...' : 'Withdraw Funds'}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
 
