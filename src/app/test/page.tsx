@@ -9,7 +9,6 @@ import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-r
 
 import '@solana/wallet-adapter-react-ui/styles.css'
 
-// Import the IDL - assuming it's at this path
 const idl = {
   version: '0.1.0',
   name: 'raffle',
@@ -100,19 +99,15 @@ const idl = {
   ],
 }
 
-// Program ID
 const programId = new PublicKey('CpG92WPSAiiJLZXdTBGBGzQDoj2NTfsLwUoiaYtqJnx7')
 
-// Constants
 const THRESHOLD_SOL = 1
 const THRESHOLD_LAMPORTS = THRESHOLD_SOL * LAMPORTS_PER_SOL
 
-// Treasury PDA finder
 const findTreasuryPDA = (programId) => {
   return PublicKey.findProgramAddressSync([Buffer.from('treasury')], programId)
 }
 
-// Wallet context provider
 const WalletContextProvider = ({ children }) => {
   const network = 'devnet'
   const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()]
@@ -127,9 +122,9 @@ const WalletContextProvider = ({ children }) => {
   )
 }
 
-// Main App
 const SolanaRaffleApp = () => {
   const wallet = useWallet()
+  console.log('hello', wallet)
   const [program, setProgram] = useState(null)
   const [raffleAccounts, setRaffleAccounts] = useState([])
   const [selectedRaffle, setSelectedRaffle] = useState(null)
@@ -139,7 +134,6 @@ const SolanaRaffleApp = () => {
   const [statusMessage, setStatusMessage] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
 
-  // Initialize connection when wallet connects
   useEffect(() => {
     if (wallet && wallet.connected && wallet.publicKey) {
       console.log('Wallet connected:', wallet.publicKey.toString())
@@ -590,6 +584,7 @@ const SolanaRaffleApp = () => {
           <h2 className="text-xl font-medium text-yellow-800 mb-2">Connect Your Wallet</h2>
           <p>Please connect your Solana wallet using the button in the top-right corner to interact with the raffle.</p>
           <p className="text-sm mt-2">Make sure your wallet is connected to Solana Devnet for testing.</p>
+          <WalletMultiButton />
         </div>
       )}
     </div>
