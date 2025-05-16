@@ -4,12 +4,16 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "ci": "npm run build && npm run lint && npm run format:check",
+    "ci": "pnpm run build && pnpm run lint && pnpm run format:check",
     "dev": "next dev --turbopack",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "deploy": "pnpm run build && pnpm run start",
+    "clean": "rm -rf .next",
+    "typecheck": "tsc --noEmit",
+    "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
     "@project-serum/anchor": "^0.26.0",

@@ -4,6 +4,9 @@
 
 [build.environment]
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
+  NEXT_PUBLIC_SOLANA_NETWORK = "devnet"
+  NEXT_USE_NETLIFY_EDGE = "true"
+  NODE_VERSION = "20.11.0"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
