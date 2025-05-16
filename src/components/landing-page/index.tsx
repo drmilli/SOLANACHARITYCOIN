@@ -4,11 +4,9 @@ import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { HeartIcon, BarChartIcon, GiftIcon, UsersIcon } from 'lucide-react'
+import { BarChartIcon, GiftIcon, UsersIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-// Badge import removed to fix lint error
-import { Separator } from '@/components/ui/separator'
 import { useTheme } from 'next-themes'
 import { Waves } from '../ui/waves'
 
@@ -111,7 +109,7 @@ function HoverRevealImage() {
   return (
     <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 1 }}>
       <div className="absolute inset-0 bg-cover bg-center">
-        <Waves />
+        <Waves backgroundImage="linear-gradient(to right, #4f46e5, #8b5cf6)" className="w-full h-full" />
       </div>
 
       {/* Hover reveal spotlight */}

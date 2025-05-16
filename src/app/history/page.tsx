@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { ArrowRight, ExternalLink, Trophy, Calendar, Search } from 'lucide-react'
 import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js'
-import { Program, AnchorProvider, web3, BN } from '@project-serum/anchor'
+import { Program, AnchorProvider, web3, BN, Idl } from '@project-serum/anchor'
 import { useWallet, ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
@@ -113,7 +113,7 @@ const THRESHOLD_SOL = 1
 const THRESHOLD_LAMPORTS = THRESHOLD_SOL * web3.LAMPORTS_PER_SOL
 
 // Wallet context provider
-const WalletContextProvider = ({ children }) => {
+const WalletContextProvider = ({ children }: { children: React.ReactNode }) => {
   const network = 'devnet'
   const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()]
   const endpoint = clusterApiUrl(network)
@@ -127,8 +127,9 @@ const WalletContextProvider = ({ children }) => {
   )
 }
 
-// Find treasury PDA
-const findTreasuryPDA = (programId) => {
+// Find treasury PDA - kept for consistency with other files
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const findTreasuryPDA = (programId: PublicKey) => {
   return PublicKey.findProgramAddressSync([Buffer.from('treasury')], programId)
 }
 
@@ -179,96 +180,146 @@ const WinnerCard = ({ raffleId, payoutLink, winner, prize, date }: WinnerCardPro
   )
 }
 
+// Define types for our program
+type Participant = {
+  wallet: PublicKey
+  tokens: BN
+}
+
+type RaffleState = {
+  admin: PublicKey
+  treasury: PublicKey
+  adminAuth1: PublicKey
+  adminAuth2: PublicKey
+  adminAuth3: PublicKey
+  payoutWallet: PublicKey
+  totalSol: BN
+  thresholdReached: boolean
+  winnerSelected: boolean
+  winner: PublicKey
+  participants: Participant[]
+  participantCount: BN
+  blacklist: PublicKey[]
+}
+
+type CompletedRaffle = {
+  id: string
+  publicKey: PublicKey
+  winner: string
+  prize: string
+  payoutLink: string
+}
+
+type ActiveRaffleType = {
+  id: PublicKey
+  data: RaffleState
+  progress: number
+}
+
+type SearchResultType = {
+  isWinner: boolean
+  raffles?: CompletedRaffle[]
+  message?: string
+}
+
 const HistoryPage = () => {
   const wallet = useWallet()
-  const [program, setProgram] = useState(null)
-  const [raffleAccounts, setRaffleAccounts] = useState([])
-  const [completedRaffles, setCompletedRaffles] = useState([])
-  const [activeRaffle, setActiveRaffle] = useState(null)
+  const [program, setProgram] = useState<Program<Idl> | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [raffleAccounts, setRaffleAccounts] = useState<PublicKey[]>([])
+  const [completedRaffles, setCompletedRaffles] = useState<CompletedRaffle[]>([])
+  const [activeRaffle, setActiveRaffle] = useState<ActiveRaffleType | null>(null)
   const [searchValue, setSearchValue] = useState('')
-  const [searchResults, setSearchResults] = useState(null)
+  const [searchResults, setSearchResults] = useState<SearchResultType | null>(null)
   const [loading, setLoading] = useState(false)
+
+  const fetchRaffleAccounts = useCallback(async (programInstance: Program<Idl>) => {
+    try {
+      setLoading(true)
+      const accounts = await programInstance.account.raffleState.all()
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setRaffleAccounts(accounts.map((acc: any) => acc.publicKey))
+
+      // Get completed raffles (with winners)
+      const completed = accounts
+        .filter((acc) => acc.account.winnerSelected)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((acc: any) => ({
+          id: acc.publicKey.toString().slice(0, 8),
+          publicKey: acc.publicKey,
+          winner: acc.account.winner.toString(),
+          prize: formatSOL(new BN(acc.account.totalSol.toNumber() / 2)),
+          payoutLink: `https://explorer.solana.com/address/${acc.account.winner.toString()}?cluster=devnet`,
+        }))
+
+      setCompletedRaffles(completed)
+
+      // Get active raffle data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const active = accounts.find((acc: any) => !acc.account.winnerSelected)
+      if (active) {
+        setActiveRaffle({
+          id: active.publicKey,
+          data: active.account as RaffleState,
+          progress: calculateProgress(active.account.totalSol),
+        })
+      }
+
+      setLoading(false)
+    } catch (error: unknown) {
+      console.error('Error fetching raffle accounts:', error)
+      setLoading(false)
+    }
+  }, [])
+
+  const initializeProgram = useCallback(() => {
+    try {
+      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
+      const provider = new AnchorProvider(
+        connection,
+        wallet as unknown as {
+          publicKey: PublicKey
+          signTransaction: <T>(tx: T) => Promise<T>
+          signAllTransactions: <T>(txs: T[]) => Promise<T[]>
+        },
+        { commitment: 'confirmed' },
+      )
+      const program = new Program(idl as Idl, programId, provider)
+      setProgram(program)
+
+      // Load raffle accounts
+      fetchRaffleAccounts(program)
+    } catch (error: unknown) {
+      console.error('Failed to initialize program:', error)
+    }
+  }, [wallet, fetchRaffleAccounts])
 
   useEffect(() => {
     if (wallet && wallet.connected && wallet.publicKey) {
       console.log('Wallet connected:', wallet.publicKey.toString())
       initializeProgram()
     }
-  }, [wallet.connected, wallet.publicKey])
+  }, [wallet, wallet.connected, wallet.publicKey, initializeProgram])
 
-  const initializeProgram = () => {
-    try {
-      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
-      const provider = new AnchorProvider(
-        connection,
-        wallet,
-        { commitment: 'confirmed' }
-      )
-      const program = new Program(idl, programId, provider)
-      setProgram(program)
-
-      // Load raffle accounts
-      fetchRaffleAccounts(program)
-    } catch (error) {
-      console.error('Failed to initialize program:', error)
-    }
-  }
-
-  const fetchRaffleAccounts = async (programInstance) => {
-    try {
-      setLoading(true)
-      const accounts = await programInstance.account.raffleState.all()
-      
-      // Set all raffle accounts
-      setRaffleAccounts(accounts.map(acc => acc.publicKey))
-      
-      // Get completed raffles (with winners)
-      const completed = accounts
-        .filter(acc => acc.account.winnerSelected)
-        .map(acc => ({
-          id: acc.publicKey.toString().slice(0, 8),
-          publicKey: acc.publicKey,
-          winner: acc.account.winner.toString(),
-          prize: formatSOL(new BN(acc.account.totalSol.toNumber() / 2)),
-          payoutLink: `https://explorer.solana.com/address/${acc.account.winner.toString()}?cluster=devnet`
-        }))
-      
-      setCompletedRaffles(completed)
-      
-      // Get active raffle data
-      const active = accounts.find(acc => !acc.account.winnerSelected)
-      if (active) {
-        setActiveRaffle({
-          id: active.publicKey,
-          data: active.account,
-          progress: calculateProgress(active.account.totalSol)
-        })
-      }
-      
-      setLoading(false)
-    } catch (error) {
-      console.error('Error fetching raffle accounts:', error)
-      setLoading(false)
-    }
-  }
-
-  const formatSOL = (lamports) => {
+  const formatSOL = (lamports: BN | number | null | undefined) => {
     if (!lamports) return '0'
     try {
-      const numberValue = typeof lamports === 'object' && lamports.toNumber 
-        ? lamports.toNumber() / web3.LAMPORTS_PER_SOL
-        : Number(lamports) / web3.LAMPORTS_PER_SOL
+      const numberValue =
+        typeof lamports === 'object' && lamports.toNumber
+          ? lamports.toNumber() / web3.LAMPORTS_PER_SOL
+          : Number(lamports) / web3.LAMPORTS_PER_SOL
       return numberValue.toFixed(4)
-    } catch (e) {
+    } catch {
       return 'Amount too large'
     }
   }
 
-  const calculateProgress = (totalSol) => {
+  const calculateProgress = (totalSol: BN | null | undefined) => {
     if (!totalSol) return 0
     try {
       return Math.min(100, (totalSol.toNumber() / THRESHOLD_LAMPORTS) * 100)
-    } catch (e) {
+    } catch {
       return 0
     }
   }
@@ -278,40 +329,38 @@ const HistoryPage = () => {
     // In a real application, you would calculate this based on the rate of contributions and threshold
     const now = new Date()
     now.setDate(now.getDate() + 10) // Adding 10 days as example
-    return now.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return now.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     })
   }
 
   const handleSearch = () => {
     if (!searchValue || !program) return
-    
+
     // Try to match a public key
     try {
       const pubkey = new PublicKey(searchValue)
-      
+
       // Check if this wallet has won any raffle
-      const winnerMatches = completedRaffles.filter(raffle => 
-        raffle.winner === pubkey.toString()
-      )
-      
+      const winnerMatches = completedRaffles.filter((raffle) => raffle.winner === pubkey.toString())
+
       if (winnerMatches.length > 0) {
         setSearchResults({
           isWinner: true,
-          raffles: winnerMatches
+          raffles: winnerMatches,
         })
       } else {
         setSearchResults({
           isWinner: false,
-          message: "This address hasn't won any raffles yet."
+          message: "This address hasn't won any raffles yet.",
         })
       }
-    } catch (error) {
+    } catch {
       setSearchResults({
         isWinner: false,
-        message: "Please enter a valid Solana address."
+        message: 'Please enter a valid Solana address.',
       })
     }
   }
@@ -342,9 +391,9 @@ const HistoryPage = () => {
         ) : completedRaffles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {completedRaffles.slice(0, 3).map((raffle) => (
-              <WinnerCard 
-                key={raffle.id} 
-                raffleId={raffle.id} 
+              <WinnerCard
+                key={raffle.id}
+                raffleId={raffle.id}
                 payoutLink={raffle.payoutLink}
                 winner={`${raffle.winner.slice(0, 4)}...${raffle.winner.slice(-4)}`}
                 prize={raffle.prize}
@@ -377,7 +426,8 @@ const HistoryPage = () => {
             </div>
             <Progress value={activeRaffle.progress} className="h-2" />
             <p className="text-sm text-muted-foreground mt-4">
-              The progress bar indicates how close we are to the next raffle draw. Current pool: {formatSOL(activeRaffle.data.totalSol)} SOL / {THRESHOLD_SOL} SOL threshold.
+              The progress bar indicates how close we are to the next raffle draw. Current pool:{' '}
+              {formatSOL(activeRaffle.data.totalSol)} SOL / {THRESHOLD_SOL} SOL threshold.
             </p>
           </div>
         </section>
@@ -400,24 +450,25 @@ const HistoryPage = () => {
               className="w-full pl-12 pr-4 py-3 bg-transparent text-gray-300 border-0 focus:ring-0 focus:outline-none"
             />
           </div>
-          <button 
-            className="rounded-r-lg bg-white text-black hover:bg-gray-100 px-6 py-3"
-            onClick={handleSearch}
-          >
+          <button className="rounded-r-lg bg-white text-black hover:bg-gray-100 px-6 py-3" onClick={handleSearch}>
             Check Now
           </button>
         </div>
-        
+
         {searchResults && (
           <div className="mt-8 p-4 border rounded-lg">
             {searchResults.isWinner ? (
               <div>
-                <p className="font-bold text-green-500 mb-4">Congratulations! You've won the following raffles:</p>
+                <p className="font-bold text-green-500 mb-4">Congratulations! You&apos;ve won the following raffles:</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {searchResults.raffles.map(raffle => (
+                  {searchResults.raffles?.map((raffle: CompletedRaffle) => (
                     <div key={raffle.id} className="border p-4 rounded-lg">
-                      <p><span className="font-medium">Raffle ID:</span> {raffle.id}</p>
-                      <p><span className="font-medium">Prize:</span> {raffle.prize} SOL</p>
+                      <p>
+                        <span className="font-medium">Raffle ID:</span> {raffle.id}
+                      </p>
+                      <p>
+                        <span className="font-medium">Prize:</span> {raffle.prize} SOL
+                      </p>
                       <Button size="sm" className="mt-2" asChild>
                         <a href={raffle.payoutLink} target="_blank" rel="noopener noreferrer">
                           View on Explorer
@@ -439,8 +490,8 @@ const HistoryPage = () => {
           <div className="md:w-2/3">
             <h2 className="text-2xl font-semibold mb-2">Don&apos;t Miss Your Prize!</h2>
             <p className="text-muted-foreground">
-              Winners have 30 days to claim their prizes. Make sure to check your account regularly and keep your
-              wallet connected.
+              Winners have 30 days to claim their prizes. Make sure to check your account regularly and keep your wallet
+              connected.
             </p>
           </div>
           <div className="md:w-1/3 flex justify-center">

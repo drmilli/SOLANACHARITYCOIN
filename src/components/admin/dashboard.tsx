@@ -1,11 +1,10 @@
-import { Clock, Coins, Timer, TrendingUp, Zap, Users, AlertTriangle, Download, ExternalLink } from 'lucide-react'
+import { Clock, Coins, TrendingUp, Zap, Users, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js'
-import { Program, web3, BN, AnchorProvider } from '@project-serum/anchor'
+import { Program, web3, BN, AnchorProvider, Idl } from '@project-serum/anchor'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 
 interface AdminDashboardProps {
   tokensMinted?: number
@@ -417,7 +416,7 @@ const THRESHOLD_SOL = 1
 const THRESHOLD_LAMPORTS = THRESHOLD_SOL * web3.LAMPORTS_PER_SOL
 
 // Function to find treasury PDA
-const findTreasuryPDA = (programId) => {
+const findTreasuryPDA = (programId: PublicKey) => {
   return PublicKey.findProgramAddressSync([Buffer.from('treasury')], programId)
 }
 
@@ -433,11 +432,27 @@ const AdminDashboard = ({
   const [totalTBHFMinted, setTotalTBHFMinted] = useState(initialTotalTBHFMinted)
   const [raffleCountdown, setRaffleCountdown] = useState(initialRaffleCountdown)
   const [timeSinceLastDraw, setTimeSinceLastDraw] = useState(initialTimeSinceLastDraw)
-  const [raffleAccounts, setRaffleAccounts] = useState([])
-  const [completedRaffles, setCompletedRaffles] = useState([])
-  const [activeRaffle, setActiveRaffle] = useState(null)
-  const [selectedRaffle, setSelectedRaffle] = useState(null)
-  const [program, setProgram] = useState(null)
+  const [raffleAccounts, setRaffleAccounts] = useState<PublicKey[]>([])
+  const [completedRaffles, setCompletedRaffles] = useState<
+    Array<{
+      id: PublicKey
+      publicKey: PublicKey
+      winner: string
+      admin: string
+      prize: BN
+      totalSol: BN
+      participantCount: number
+      date: Date
+    }>
+  >([])
+  const [activeRaffle, setActiveRaffle] = useState<{
+    id: PublicKey
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: any
+    progress: number
+  } | null>(null)
+  const [selectedRaffle, setSelectedRaffle] = useState<PublicKey | null>(null)
+  const [program, setProgram] = useState<Program<Idl> | null>(null)
   const [treasuryBalance, setTreasuryBalance] = useState(0)
   const [totalParticipants, setTotalParticipants] = useState(0)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -446,161 +461,183 @@ const AdminDashboard = ({
 
   const wallet = useWallet()
 
+  // Declare fetchRaffleAccounts first to avoid circular references
+  const fetchRaffleAccounts = useCallback(
+    async (programInstance: Program<Idl>) => {
+      try {
+        setLoading(true)
+
+        const accounts = await programInstance.account.raffleState.all()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setRaffleAccounts(accounts.map((acc: any) => acc.publicKey))
+
+        let totalPoolSize = 0
+        let latestRaffleDate = null
+        const allParticipants = new Set<string>()
+
+        const completed = accounts
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .filter((acc: any) => acc.account.winnerSelected)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((acc: any) => ({
+            id: acc.publicKey,
+            publicKey: acc.publicKey,
+            winner: acc.account.winner.toString(),
+            admin: acc.account.admin.toString(),
+            prize: new BN(acc.account.totalSol.toNumber() / 2),
+            totalSol: acc.account.totalSol,
+            participantCount: acc.account.participantCount.toNumber(),
+            date: new Date(),
+          }))
+
+        completed.sort((a, b) => b.date.getTime() - a.date.getTime())
+        setCompletedRaffles(completed)
+
+        if (completed.length > 0) {
+          latestRaffleDate = completed[0].date
+
+          totalPoolSize = completed.reduce((sum: number, raffle) => sum + raffle.totalSol.toNumber(), 0)
+
+          // Set time since last draw
+          const now = new Date()
+          const diffTime = Math.abs(now.getTime() - latestRaffleDate.getTime())
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+          const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+          const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60))
+
+          setTimeSinceLastDraw(`${diffDays}d ${diffHours}h ${diffMinutes}m`)
+        }
+
+        // Get active raffle data
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const active = accounts.find((acc: any) => !acc.account.winnerSelected)
+        if (active) {
+          // This value is unused but kept for reference
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const participantCount = active.account.participantCount.toNumber()
+          totalPoolSize += active.account.totalSol.toNumber()
+
+          setActiveRaffle({
+            id: active.publicKey,
+            data: active.account,
+            progress: calculateProgress(active.account.totalSol),
+          })
+
+          setSelectedRaffle(active.publicKey)
+
+          // Add to total participants count
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          active.account.participants.forEach((p: any) => {
+            allParticipants.add(p.wallet.toString())
+          })
+
+          // Check if connected wallet is admin
+          if (wallet.publicKey) {
+            const isAdminWallet =
+              active.account.admin.equals(wallet.publicKey) ||
+              active.account.adminAuth1.equals(wallet.publicKey) ||
+              active.account.adminAuth2.equals(wallet.publicKey) ||
+              active.account.adminAuth3.equals(wallet.publicKey)
+
+            setIsAdmin(isAdminWallet)
+          }
+
+          // Get treasury balance
+          try {
+            const [treasuryPDA] = findTreasuryPDA(programId)
+            const treasuryInfo = await programInstance.provider.connection.getAccountInfo(treasuryPDA)
+            if (treasuryInfo) {
+              setTreasuryBalance(treasuryInfo.lamports)
+            }
+          } catch (err) {
+            console.error('Error fetching treasury balance:', err)
+          }
+        }
+
+        // Add all participant wallets to the set
+        completed.forEach((raffle) => {
+          // In a real app, you'd want to access the participants array
+          // We're using participantCount as a proxy
+          for (let i = 0; i < raffle.participantCount; i++) {
+            allParticipants.add(`unique-participant-${i}`) // Placeholder
+          }
+        })
+
+        setTotalParticipants(allParticipants.size)
+
+        // Convert lamports to SOL
+        setTotalSolDonated(totalPoolSize / web3.LAMPORTS_PER_SOL)
+
+        // Set tokens minted (using totalSol as a proxy in this example)
+        const tokensFromCurrentRaffle = active ? active.account.totalSol.toNumber() / 10000000 : 0
+        setTokensMinted(Math.floor(tokensFromCurrentRaffle * 100))
+
+        // Total TBHF tokens as a function of all SOL donated
+        setTotalTBHFMinted(Math.floor((totalPoolSize / web3.LAMPORTS_PER_SOL) * 100))
+
+        // Raffle countdown (a simple formula for this example)
+        const countdown = 100000 - tokensMinted
+        setRaffleCountdown(countdown > 0 ? countdown : 0)
+
+        setLoading(false)
+      } catch (error: unknown) {
+        console.error('Error fetching raffle accounts:', error)
+        setStatusMessage(`Error: ${error instanceof Error ? error.message : String(error)}`)
+        setLoading(false)
+      }
+    },
+    [wallet.publicKey, tokensMinted],
+  )
+
+  // Initialize Anchor program
+  const initializeProgram = useCallback(() => {
+    try {
+      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
+      const provider = new AnchorProvider(
+        connection,
+        wallet as unknown as {
+          publicKey: PublicKey
+          signTransaction: <T>(tx: T) => Promise<T>
+          signAllTransactions: <T>(txs: T[]) => Promise<T[]>
+        },
+        { commitment: 'confirmed' },
+      )
+      const program = new Program(idl as Idl, programId, provider)
+      setProgram(program)
+
+      // Load raffle accounts
+      fetchRaffleAccounts(program)
+    } catch (error: unknown) {
+      console.error('Failed to initialize program:', error)
+      setStatusMessage(`Error initializing: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }, [wallet, fetchRaffleAccounts])
+
   useEffect(() => {
     if (wallet && wallet.connected && wallet.publicKey) {
       console.log('Admin wallet connected:', wallet.publicKey.toString())
       initializeProgram()
     }
-  }, [wallet.connected, wallet.publicKey])
+  }, [wallet, wallet.connected, wallet.publicKey, initializeProgram])
 
-  const initializeProgram = () => {
-    try {
-      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
-      const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' })
-      const program = new Program(idl, programId, provider)
-      setProgram(program)
+  // Functions already defined above
 
-      // Load raffle accounts
-      fetchRaffleAccounts(program)
-    } catch (error) {
-      console.error('Failed to initialize program:', error)
-      setStatusMessage(`Error initializing: ${error.message}`)
-    }
-  }
-
-  const fetchRaffleAccounts = async (programInstance) => {
-    try {
-      setLoading(true)
-
-      const accounts = await programInstance.account.raffleState.all()
-      setRaffleAccounts(accounts.map((acc) => acc.publicKey))
-
-      let completedCount = 0
-      let totalPoolSize = 0
-      let activeParticipants = 0
-      let latestRaffleDate = null
-      const allParticipants = new Set()
-
-      const completed = accounts
-        .filter((acc) => acc.account.winnerSelected)
-        .map((acc) => ({
-          id: acc.publicKey,
-          publicKey: acc.publicKey,
-          winner: acc.account.winner.toString(),
-          admin: acc.account.admin.toString(),
-          prize: new BN(acc.account.totalSol.toNumber() / 2),
-          totalSol: acc.account.totalSol,
-          participantCount: acc.account.participantCount.toNumber(),
-          date: new Date(),
-        }))
-
-      completed.sort((a, b) => b.date.getTime() - a.date.getTime())
-      setCompletedRaffles(completed)
-
-      if (completed.length > 0) {
-        latestRaffleDate = completed[0].date
-
-        totalPoolSize = completed.reduce((sum, raffle) => sum + raffle.totalSol.toNumber(), 0)
-
-        // Set time since last draw
-        const now = new Date()
-        const diffTime = Math.abs(now.getTime() - latestRaffleDate.getTime())
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-        const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-        const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60))
-
-        setTimeSinceLastDraw(`${diffDays}d ${diffHours}h ${diffMinutes}m`)
-      }
-
-      // Get active raffle data
-      const active = accounts.find((acc) => !acc.account.winnerSelected)
-      if (active) {
-        activeParticipants = active.account.participantCount.toNumber()
-        totalPoolSize += active.account.totalSol.toNumber()
-
-        setActiveRaffle({
-          id: active.publicKey,
-          data: active.account,
-          progress: calculateProgress(active.account.totalSol),
-        })
-
-        setSelectedRaffle(active.publicKey)
-
-        // Add to total participants count
-        active.account.participants.forEach((p) => {
-          allParticipants.add(p.wallet.toString())
-        })
-
-        // Check if connected wallet is admin
-        if (wallet.publicKey) {
-          const isAdminWallet =
-            active.account.admin.equals(wallet.publicKey) ||
-            active.account.adminAuth1.equals(wallet.publicKey) ||
-            active.account.adminAuth2.equals(wallet.publicKey) ||
-            active.account.adminAuth3.equals(wallet.publicKey)
-
-          setIsAdmin(isAdminWallet)
-        }
-
-        // Get treasury balance
-        try {
-          const [treasuryPDA] = findTreasuryPDA(programId)
-          const treasuryInfo = await programInstance.provider.connection.getAccountInfo(treasuryPDA)
-          if (treasuryInfo) {
-            setTreasuryBalance(treasuryInfo.lamports)
-          }
-        } catch (err) {
-          console.error('Error fetching treasury balance:', err)
-        }
-      }
-
-      // Add all participant wallets to the set
-      completed.forEach((raffle) => {
-        // In a real app, you'd want to access the participants array
-        // We're using participantCount as a proxy
-        for (let i = 0; i < raffle.participantCount; i++) {
-          allParticipants.add(`unique-participant-${i}`) // Placeholder
-        }
-      })
-
-      setTotalParticipants(allParticipants.size)
-
-      // Convert lamports to SOL
-      setTotalSolDonated(totalPoolSize / web3.LAMPORTS_PER_SOL)
-
-      // Set tokens minted (using totalSol as a proxy in this example)
-      const tokensFromCurrentRaffle = active ? active.account.totalSol.toNumber() / 10000000 : 0
-      setTokensMinted(Math.floor(tokensFromCurrentRaffle * 100))
-
-      // Total TBHF tokens as a function of all SOL donated
-      setTotalTBHFMinted(Math.floor((totalPoolSize / web3.LAMPORTS_PER_SOL) * 100))
-
-      // Raffle countdown (a simple formula for this example)
-      const countdown = 100000 - tokensMinted
-      setRaffleCountdown(countdown > 0 ? countdown : 0)
-
-      setLoading(false)
-    } catch (error) {
-      console.error('Error fetching raffle accounts:', error)
-      setStatusMessage(`Error: ${error.message}`)
-      setLoading(false)
-    }
-  }
-
-  const calculateProgress = (totalSol) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const calculateProgress = (totalSol: any) => {
     if (!totalSol) return 0
     try {
       return Math.min(100, (totalSol.toNumber() / THRESHOLD_LAMPORTS) * 100)
-    } catch (e) {
+    } catch {
       return 0
     }
   }
 
-  const formatSOL = (lamports) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const formatSOL = (lamports: any) => {
     if (!lamports) return '0'
     try {
       return (lamports / web3.LAMPORTS_PER_SOL).toFixed(4)
-    } catch (e) {
+    } catch {
       return 'Amount too large'
     }
   }
@@ -639,9 +676,9 @@ const AdminDashboard = ({
       setTimeout(() => fetchRaffleAccounts(program), 2000)
 
       setLoading(false)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error selecting winner:', error)
-      setStatusMessage(`Error: ${error.message}`)
+      setStatusMessage(`Error: ${error instanceof Error ? error.message : String(error)}`)
       setLoading(false)
     }
   }
@@ -674,9 +711,9 @@ const AdminDashboard = ({
       setTimeout(() => fetchRaffleAccounts(program), 2000)
 
       setLoading(false)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error withdrawing funds:', error)
-      setStatusMessage(`Error: ${error.message}`)
+      setStatusMessage(`Error: ${error instanceof Error ? error.message : String(error)}`)
       setLoading(false)
     }
   }
@@ -711,9 +748,9 @@ const AdminDashboard = ({
       }, 2000)
 
       setLoading(false)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error initializing raffle:', error)
-      setStatusMessage(`Error: ${error.message}`)
+      setStatusMessage(`Error: ${error instanceof Error ? error.message : String(error)}`)
       setLoading(false)
     }
   }

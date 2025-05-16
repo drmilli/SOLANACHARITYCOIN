@@ -9,7 +9,7 @@ import AdminDashboard from '@/components/admin/dashboard'
 
 import '@solana/wallet-adapter-react-ui/styles.css'
 
-const WalletContextProvider = ({ children }) => {
+const WalletContextProvider = ({ children }: { children: React.ReactNode }) => {
   const network = 'devnet'
   const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()]
   const endpoint = clusterApiUrl(network)

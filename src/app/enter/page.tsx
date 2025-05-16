@@ -1,24 +1,42 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Connection, PublicKey, clusterApiUrl, SystemProgram, LAMPORTS_PER_SOL, Transaction } from '@solana/web3.js'
-import { Program, web3, BN, AnchorProvider } from '@project-serum/anchor'
-import { useWallet, WalletContextState } from '@solana/wallet-adapter-react' // Using the standard wallet adapter
+import { Connection, PublicKey, clusterApiUrl, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { Program, BN, AnchorProvider, Idl } from '@project-serum/anchor'
+import { useWallet } from '@solana/wallet-adapter-react' // Using the standard wallet adapter
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import { WalletMultiButton, WalletModalProvider } from '@solana/wallet-adapter-react-ui' // Using the standard wallet connect button
-import Image from 'next/image'
 import { Coins, Gift, Trophy, Users } from 'lucide-react'
 
-// Import the necessary context providers from the wallet adapter
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import '@solana/wallet-adapter-react-ui/styles.css'
 
-// Same IDL as in the test page
+type Participant = {
+  wallet: PublicKey
+  tokens: BN
+}
+
+type RaffleState = {
+  admin: PublicKey
+  treasury: PublicKey
+  adminAuth1: PublicKey
+  adminAuth2: PublicKey
+  adminAuth3: PublicKey
+  payoutWallet: PublicKey
+  totalSol: BN
+  thresholdReached: boolean
+  winnerSelected: boolean
+  winner: PublicKey
+  participants: Participant[]
+  participantCount: BN
+  blacklist: PublicKey[]
+}
+
 const idl = {
   version: '0.1.0',
   name: 'raffle',
@@ -114,12 +132,12 @@ const programId = new PublicKey('CpG92WPSAiiJLZXdTBGBGzQDoj2NTfsLwUoiaYtqJnx7')
 const THRESHOLD_SOL = 1
 const THRESHOLD_LAMPORTS = THRESHOLD_SOL * LAMPORTS_PER_SOL
 
-const findTreasuryPDA = (programId) => {
+const findTreasuryPDA = (programId: PublicKey) => {
   return PublicKey.findProgramAddressSync([Buffer.from('treasury')], programId)
 }
 
 // Wrap the RafflePage component with the necessary wallet adapter providers
-const WalletContextProvider = ({ children }) => {
+const WalletContextProvider = ({ children }: { children: React.ReactNode }) => {
   const network = 'devnet'
   const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()]
   const endpoint = clusterApiUrl(network)
@@ -135,32 +153,73 @@ const WalletContextProvider = ({ children }) => {
 
 const RafflePageContent = () => {
   const wallet = useWallet()
-  const [program, setProgram] = useState(null)
-  const [raffleAccounts, setRaffleAccounts] = useState([])
-  const [selectedRaffle, setSelectedRaffle] = useState(null)
-  const [raffleState, setRaffleState] = useState(null)
+  const [program, setProgram] = useState<Program<Idl> | null>(null)
+  const [raffleAccounts, setRaffleAccounts] = useState<PublicKey[]>([])
+  const [selectedRaffle, setSelectedRaffle] = useState<PublicKey | null>(null)
+  const [raffleState, setRaffleState] = useState<RaffleState | null>(null)
   const [donationAmount, setDonationAmount] = useState(0.01)
   const [loading, setLoading] = useState(false)
   const [statusMessage, setStatusMessage] = useState('')
 
-  useEffect(() => {
-    if (wallet.connected && wallet.publicKey) {
-      console.log('Wallet connected:', wallet.publicKey.toString())
-      initializeProgram()
-    } else if (wallet.publicKey) {
-      console.log('Wallet connected but might not be fully initialized')
-      setStatusMessage('Wallet connected, initializing...')
-      initializeProgram()
-    } else {
-      console.log('Wallet not connected')
-      setProgram(null)
-      setRaffleAccounts([])
-      setSelectedRaffle(null)
-      setRaffleState(null)
-    }
-  }, [wallet.connected, wallet.publicKey])
+  // Define functions to avoid circular reference issue
+  const fetchRaffleState = useCallback(async (raffleAccount: PublicKey, programInstance: Program<Idl> | null) => {
+    if (!raffleAccount) return
 
-  // Initialize Anchor program
+    const prgInstance = programInstance || program
+    if (!prgInstance) return
+
+    try {
+      setLoading(true)
+      setStatusMessage('Loading raffle data...')
+
+      const state = await prgInstance.account.raffleState.fetch(raffleAccount)
+      setRaffleState(state as RaffleState)
+
+      setStatusMessage('Raffle data loaded')
+      setLoading(false)
+    } catch (error: unknown) {
+      console.error('Error fetching raffle state:', error)
+      setStatusMessage(`Error: ${error instanceof Error ? error.message : String(error)}`)
+      setLoading(false)
+    }
+  }, [])
+
+  const fetchRaffleAccounts = useCallback(
+    async (programInstance: Program<Idl>) => {
+      try {
+        setLoading(true)
+        setStatusMessage('Fetching raffle accounts...')
+
+        const accounts = await programInstance.account.raffleState.all()
+        setRaffleAccounts(accounts.map((acc) => acc.publicKey))
+
+        if (accounts.length > 0) {
+          // Only update if necessary to prevent infinite loops
+          if (!selectedRaffle) {
+            setSelectedRaffle(accounts[0].publicKey)
+            await fetchRaffleState(accounts[0].publicKey, programInstance)
+          } else {
+            const isStillValid = accounts.some((acc) => acc.publicKey.equals(selectedRaffle))
+            if (!isStillValid) {
+              setSelectedRaffle(accounts[0].publicKey)
+              await fetchRaffleState(accounts[0].publicKey, programInstance)
+            }
+          }
+        } else if (accounts.length === 0) {
+          setRaffleState(null)
+        }
+
+        setStatusMessage(`Found ${accounts.length} raffle account(s)`)
+        setLoading(false)
+      } catch (error: unknown) {
+        console.error('Error fetching raffle accounts:', error)
+        setStatusMessage(`Error: ${error instanceof Error ? error.message : String(error)}`)
+        setLoading(false)
+      }
+    },
+    [fetchRaffleState], // Remove selectedRaffle from dependencies
+  )
+
   const initializeProgram = useCallback(async () => {
     if (!wallet || !wallet.publicKey) {
       console.log('Wallet not connected, cannot initialize program.')
@@ -170,77 +229,40 @@ const RafflePageContent = () => {
 
     try {
       const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
-      const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' })
-      const program = new Program(idl, programId, provider)
+      // Use type assertion to satisfy the Wallet interface requirement
+      const provider = new AnchorProvider(
+        connection,
+        wallet as unknown as {
+          publicKey: PublicKey
+          signTransaction: <T>(tx: T) => Promise<T>
+          signAllTransactions: <T>(txs: T[]) => Promise<T[]>
+        },
+        { commitment: 'confirmed' },
+      )
+      const program = new Program(idl as Idl, programId, provider)
       setProgram(program)
 
       // Load raffle accounts
       fetchRaffleAccounts(program)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to initialize program:', error)
-      setStatusMessage(`Error initializing: ${error.message}`)
+      setStatusMessage(`Error initializing: ${error instanceof Error ? error.message : String(error)}`)
     }
-  }, [wallet])
+  }, [wallet, fetchRaffleAccounts])
 
-  // Fetch all raffle accounts
-  const fetchRaffleAccounts = useCallback(
-    async (programInstance) => {
-      try {
-        setLoading(true)
-        setStatusMessage('Fetching raffle accounts...')
-
-        const accounts = await programInstance.account.raffleState.all()
-        setRaffleAccounts(accounts.map((acc) => acc.publicKey))
-
-        if (accounts.length > 0 && !selectedRaffle) {
-          setSelectedRaffle(accounts[0].publicKey)
-          await fetchRaffleState(accounts[0].publicKey, programInstance)
-        } else if (accounts.length > 0 && selectedRaffle) {
-          const isStillValid = accounts.some((acc) => acc.publicKey.equals(selectedRaffle))
-          if (!isStillValid) {
-            setSelectedRaffle(accounts[0].publicKey)
-            await fetchRaffleState(accounts[0].publicKey, programInstance)
-          }
-        } else if (accounts.length === 0) {
-          setRaffleState(null)
-        }
-
-        setStatusMessage(`Found ${accounts.length} raffle account(s)`)
-        setLoading(false)
-      } catch (error) {
-        console.error('Error fetching raffle accounts:', error)
-        setStatusMessage(`Error: ${error.message}`)
-        setLoading(false)
-      }
-    },
-    [selectedRaffle],
-  )
-
-  // Fetch state of a specific raffle
-  const fetchRaffleState = useCallback(
-    async (raffleAccount, programInstance) => {
-      if (!raffleAccount) return
-
-      const prgInstance = programInstance || program
-      if (!prgInstance) return
-
-      try {
-        setLoading(true)
-        setStatusMessage('Loading raffle data...')
-
-        const state = await prgInstance.account.raffleState.fetch(raffleAccount)
-        setRaffleState(state)
-
-        setStatusMessage('Raffle data loaded')
-        setLoading(false)
-      } catch (error) {
-        console.error('Error fetching raffle state:', error)
-        setStatusMessage(`Error: ${error.message}`)
-        setLoading(false)
-      }
-    },
-    [program],
-  )
+  useEffect(() => {
+    if ((wallet.connected && wallet.publicKey) || wallet.publicKey) {
+      console.log('Wallet connected:', wallet.publicKey?.toString())
+      setStatusMessage('Wallet connected, initializing...')
+      initializeProgram()
+    } else {
+      console.log('Wallet not connected')
+      setProgram(null)
+      setRaffleAccounts([])
+      setSelectedRaffle(null)
+      setRaffleState(null)
+    }
+  }, [wallet.connected, wallet.publicKey]) // Remove initializeProgram from dependencies
 
   // Donate to raffle
   const donateToRaffle = async () => {
@@ -275,17 +297,20 @@ const RafflePageContent = () => {
 
       setStatusMessage(`Donated ${donationAmount} SOL! TX: ${tx.substring(0, 8)}...`)
 
-      // Refresh the raffle state
-      setTimeout(() => fetchRaffleState(selectedRaffle, null), 2000)
+      // Refresh the raffle state - use a ref to avoid stale closure issues
+      setTimeout(() => {
+        if (selectedRaffle) {
+          fetchRaffleState(selectedRaffle, null)
+        }
+      }, 2000)
 
       setLoading(false)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error donating:', error)
-      // Handle specific error cases
-      let errorMessage = error.message
-      if (error.message.includes('Insufficient funds')) {
+      let errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorMessage.includes('Insufficient funds')) {
         errorMessage = 'Insufficient funds to donate. Please add more SOL to your wallet.'
-      } else if (error.message.includes('User rejected')) {
+      } else if (errorMessage.includes('User rejected')) {
         errorMessage = 'Transaction was rejected by the wallet.'
       }
       setStatusMessage(`Error: ${errorMessage}`)
@@ -294,30 +319,34 @@ const RafflePageContent = () => {
   }
 
   // Format SOL amount from lamports
-  const formatSOL = (lamports) => {
+  const formatSOL = (lamports: BN | null | undefined) => {
     if (!lamports) return '0'
     try {
       return (lamports.toNumber() / LAMPORTS_PER_SOL).toFixed(4)
-    } catch (e) {
+    } catch {
       return 'Amount too large'
     }
   }
 
   // Handle selection of a raffle from dropdown
-  const handleRaffleSelect = (e) => {
-    const selected = e.target.value
-    if (selected) {
-      setSelectedRaffle(new PublicKey(selected))
-      fetchRaffleState(new PublicKey(selected), null)
-    }
-  }
+  const handleRaffleSelect = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const selected = e.target.value
+      if (selected) {
+        const pubkey = new PublicKey(selected)
+        setSelectedRaffle(pubkey)
+        fetchRaffleState(pubkey, null)
+      }
+    },
+    [fetchRaffleState],
+  )
 
   // Calculate progress percentage
-  const getProgressPercentage = (totalSol) => {
+  const getProgressPercentage = (totalSol: BN | null | undefined) => {
     if (!totalSol) return 0
     try {
       return Math.min(100, (totalSol.toNumber() / THRESHOLD_LAMPORTS) * 100)
-    } catch (e) {
+    } catch {
       return 0
     }
   }
@@ -328,7 +357,7 @@ const RafflePageContent = () => {
       return '0%'
 
     // Check if user has participated
-    const userEntries = raffleState.participants.find((p) => p.wallet.equals(wallet.publicKey))
+    const userEntries = raffleState.participants?.find((p) => wallet.publicKey && p.wallet.equals(wallet.publicKey))
 
     if (userEntries) {
       const userTokens = userEntries.tokens.toNumber()
@@ -389,27 +418,27 @@ const RafflePageContent = () => {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>
-                            Progress: {formatSOL(raffleState.totalSol)} / {THRESHOLD_SOL} SOL
+                            Progress: {formatSOL(raffleState?.totalSol)} / {THRESHOLD_SOL} SOL
                           </span>
-                          <span>{getProgressPercentage(raffleState.totalSol)}%</span>
+                          <span>{getProgressPercentage(raffleState?.totalSol)}%</span>
                         </div>
-                        <Progress value={getProgressPercentage(raffleState.totalSol)} />
+                        <Progress value={getProgressPercentage(raffleState?.totalSol)} />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col items-center rounded-lg border p-4 text-center">
                           <Coins className="mb-2 h-8 w-8 text-primary" />
                           <span className="text-sm text-gray-600 dark:text-gray-400">Prize Pot</span>
-                          <span className="text-xl font-bold">{formatSOL(raffleState.totalSol)} SOL</span>
+                          <span className="text-xl font-bold">{formatSOL(raffleState?.totalSol)} SOL</span>
                         </div>
                         <div className="flex flex-col items-center rounded-lg border p-4 text-center">
                           <Users className="mb-2 h-8 w-8 text-primary" />
                           <span className="text-sm text-gray-600 dark:text-gray-400">Participants</span>
-                          <span className="text-xl font-bold">{raffleState.participantCount.toString()}</span>
+                          <span className="text-xl font-bold">{raffleState?.participantCount.toString()}</span>
                         </div>
                       </div>
 
-                      {!raffleState.winnerSelected && (
+                      {!raffleState?.winnerSelected && (
                         <div className="space-y-4">
                           <div className="space-y-2">
                             <Label>Amount to Contribute (SOL)</Label>
@@ -506,7 +535,7 @@ const RafflePageContent = () => {
                     <div>
                       <h3 className="mb-2 font-semibold">Potential Win Amount</h3>
                       <div className="text-3xl font-bold text-green-600">
-                        {formatSOL(raffleState.totalSol ? new BN(raffleState.totalSol.toNumber() / 2) : new BN(0))} SOL
+                        {formatSOL(raffleState?.totalSol ? new BN(raffleState.totalSol.toNumber() / 2) : new BN(0))} SOL
                       </div>
                       <p className="text-sm text-gray-600">50% of the current pot</p>
                     </div>
@@ -520,15 +549,15 @@ const RafflePageContent = () => {
                     </div>
                   </div>
 
-                  {raffleState.winnerSelected && (
+                  {raffleState?.winnerSelected && (
                     <div className="rounded-lg bg-amber-50 p-4">
                       <h3 className="mb-2 font-medium text-amber-800">Winner Selected!</h3>
                       <p className="text-sm text-amber-700">
-                        Winner: {raffleState.winner.toString().substring(0, 8)}...
+                        Winner: {raffleState?.winner.toString().substring(0, 8)}...
                       </p>
                       <p className="text-sm text-amber-700">
                         Prize:{' '}
-                        {formatSOL(raffleState.totalSol ? new BN(raffleState.totalSol.toNumber() / 2) : new BN(0))} SOL
+                        {formatSOL(raffleState?.totalSol ? new BN(raffleState.totalSol.toNumber() / 2) : new BN(0))} SOL
                       </p>
                     </div>
                   )}
