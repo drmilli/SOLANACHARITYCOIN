@@ -6,9 +6,17 @@ import { Program, BN, AnchorProvider, web3 } from '@project-serum/anchor'
 import { useWallet, ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui'
+import dynamic from 'next/dynamic'
 
 import '@solana/wallet-adapter-react-ui/styles.css'
-import { WalletButton } from '@/components/solana/solana-provider'
+
+// Dynamic wallet button to prevent hydration issues
+const WalletMultiButtonDynamic = dynamic(
+  async () => {
+    return WalletMultiButton
+  },
+  { ssr: false }
+)
 
 type Participant = {
   wallet: PublicKey
@@ -137,8 +145,6 @@ const WalletContextProvider = ({ children }: { children: React.ReactNode }) => {
   const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()]
   const endpoint = clusterApiUrl(network)
 
-  console.log('[Wallet Debug] RPC endpoint:', endpoint)
-
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
@@ -155,11 +161,6 @@ const SolanaRaffleApp = () => {
   const [donationAmount, setDonationAmount] = useState('0.1')
   const [loading, setLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
-
-  useEffect(() => {
-    console.log('Wallet connected:', wallet.connected)
-    console.log('Wallet publicKey:', wallet.publicKey?.toString())
-  }, [wallet.connected, wallet.publicKey])
 
   useEffect(() => {
     if (wallet.connected) {
@@ -184,26 +185,38 @@ const SolanaRaffleApp = () => {
     )
   }
 
+  const calculateWinningProbability = (raffle: RaffleState, participantWallet: PublicKey) => {
+    const participant = raffle.participants.find(p => p.wallet.toString() === participantWallet.toString())
+    if (!participant) return '0%'
+    
+    const totalTickets = raffle.participants.reduce((sum, p) => sum + p.tokens.toNumber(), 0)
+    if (totalTickets === 0) return '0%'
+    
+    const probability = (participant.tokens.toNumber() / totalTickets) * 100
+    return `${probability.toFixed(2)}%`
+  }
+
   const fetchRaffleState = async () => {
     if (!wallet.connected) return
 
     try {
       setLoading(true)
       const program = getProgram()
-
+      
       console.log('Fetching raffle state accounts...')
       const accounts = await program.account.raffleState.all()
       console.log('Found accounts:', accounts.length)
-
-      const raffleAccounts = accounts.map((acc) => ({
+      
+      const raffleAccounts = accounts.map(acc => ({
         publicKey: acc.publicKey,
-        account: acc.account as unknown as RaffleState,
+        account: acc.account as unknown as RaffleState
       }))
-
+      
       setRaffles(raffleAccounts)
-
+      
       if (raffleAccounts.length > 0 && !selectedRaffle) {
-        setSelectedRaffle(raffleAccounts[0].publicKey.toString())
+        const firstRaffle = raffleAccounts[0].publicKey.toString()
+        setSelectedRaffle(firstRaffle)
         setIsAdmin(checkIfAdmin(raffleAccounts[0].account))
       }
     } catch (error) {
@@ -213,55 +226,13 @@ const SolanaRaffleApp = () => {
     }
   }
 
-  const handleDonate = async () => {
-    if (!wallet.connected || !wallet.publicKey || !selectedRaffle) {
-      console.error('Wallet not connected or no raffle selected')
-      return
-    }
-
-    try {
-      setLoading(true)
-      const program = getProgram()
-
-      const lamports = parseFloat(donationAmount) * LAMPORTS_PER_SOL
-      const [treasuryPDA] = findTreasuryPDA(programId)
-      const raffleStateAddress = new PublicKey(selectedRaffle)
-
-      console.log('Donating', lamports, 'lamports to treasury:', treasuryPDA.toString())
-      console.log('Using raffle state account:', raffleStateAddress.toString())
-
-      const tx = await program.methods
-        .donate(new BN(lamports))
-        .accounts({
-          raffleState: raffleStateAddress,
-          participant: wallet.publicKey,
-          treasury: treasuryPDA,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc()
-
-      console.log('Transaction successful:', tx)
-      await fetchRaffleState()
-    } catch (error) {
-      console.error('Error donating:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleCreateRaffle = async () => {
-    if (!wallet.connected || !wallet.publicKey) {
-      console.error('Wallet not connected')
-      return
-    }
+    if (!wallet.connected || !wallet.publicKey) return
 
     try {
       setLoading(true)
       const program = getProgram()
-
-      // Generate a new keypair for the raffle state account
       const raffleStateAccount = web3.Keypair.generate()
-      console.log('Creating new raffle with address:', raffleStateAccount.publicKey.toString())
 
       const tx = await program.methods
         .initialize()
@@ -273,7 +244,7 @@ const SolanaRaffleApp = () => {
         .signers([raffleStateAccount])
         .rpc()
 
-      console.log('Raffle created successfully:', tx)
+      console.log('Raffle created:', tx)
       await fetchRaffleState()
     } catch (error) {
       console.error('Error creating raffle:', error)
@@ -283,15 +254,11 @@ const SolanaRaffleApp = () => {
   }
 
   const handleSelectWinner = async () => {
-    if (!wallet.connected || !wallet.publicKey || !selectedRaffle) {
-      console.error('Wallet not connected or no raffle selected')
-      return
-    }
+    if (!wallet.connected || !wallet.publicKey || !selectedRaffle) return
 
     try {
       setLoading(true)
       const program = getProgram()
-
       const [treasuryPDA] = findTreasuryPDA(programId)
       const raffleStateAddress = new PublicKey(selectedRaffle)
       const selectedRaffleState = raffles.find(r => r.publicKey.toString() === selectedRaffle)
@@ -300,45 +267,52 @@ const SolanaRaffleApp = () => {
         throw new Error('Selected raffle not found')
       }
 
-      // Use recent slot hash for randomness
+      if (!selectedRaffleState.account.thresholdReached) {
+        throw new Error('Threshold not reached yet')
+      }
+
+      if (selectedRaffleState.account.winnerSelected) {
+        throw new Error('Winner already selected')
+      }
+
+      // Get the participant with the most tokens as a fallback if random selection fails
+      const participantWithMostTokens = selectedRaffleState.account.participants.reduce((prev, current) => {
+        return (prev.tokens.toNumber() > current.tokens.toNumber()) ? prev : current
+      }, selectedRaffleState.account.participants[0])
+
       const tx = await program.methods
         .selectWinner()
         .accounts({
           raffleState: raffleStateAddress,
           admin: wallet.publicKey,
           treasury: treasuryPDA,
-          winnerAccount: selectedRaffleState.account.participants[0]?.wallet || wallet.publicKey, // Fallback to admin if no participants
+          winnerAccount: participantWithMostTokens.wallet,
           recentSlotHash: SYSVAR_SLOT_HASHES_PUBKEY,
           systemProgram: SystemProgram.programId,
         })
         .rpc()
 
-      console.log('Winner selected successfully:', tx)
+      console.log('Winner selected:', tx)
       await fetchRaffleState()
     } catch (error) {
       console.error('Error selecting winner:', error)
+      alert(error.message || 'Failed to select winner')
     } finally {
       setLoading(false)
     }
   }
 
   const handleWithdraw = async () => {
-    if (!wallet.connected || !wallet.publicKey || !selectedRaffle) {
-      console.error('Wallet not connected or no raffle selected')
-      return
-    }
+    if (!wallet.connected || !wallet.publicKey || !selectedRaffle) return
 
     try {
       setLoading(true)
       const program = getProgram()
-
       const [treasuryPDA] = findTreasuryPDA(programId)
       const raffleStateAddress = new PublicKey(selectedRaffle)
       const selectedRaffleState = raffles.find(r => r.publicKey.toString() === selectedRaffle)
 
-      if (!selectedRaffleState) {
-        throw new Error('Selected raffle not found')
-      }
+      if (!selectedRaffleState) return
 
       const tx = await program.methods
         .withdrawFunds()
@@ -351,7 +325,7 @@ const SolanaRaffleApp = () => {
         })
         .rpc()
 
-      console.log('Withdrawal successful:', tx)
+      console.log('Withdrawal complete:', tx)
       await fetchRaffleState()
     } catch (error) {
       console.error('Error withdrawing funds:', error)
@@ -360,11 +334,32 @@ const SolanaRaffleApp = () => {
     }
   }
 
-  const handleRaffleSelect = (publicKey: string) => {
-    setSelectedRaffle(publicKey)
-    const selectedRaffleState = raffles.find((r) => r.publicKey.toString() === publicKey)
-    if (selectedRaffleState) {
-      setIsAdmin(checkIfAdmin(selectedRaffleState.account))
+  const handleDonate = async () => {
+    if (!wallet.connected || !wallet.publicKey || !selectedRaffle) return
+
+    try {
+      setLoading(true)
+      const program = getProgram()
+      const [treasuryPDA] = findTreasuryPDA(programId)
+      const raffleStateAddress = new PublicKey(selectedRaffle)
+      const lamports = parseFloat(donationAmount) * LAMPORTS_PER_SOL
+
+      const tx = await program.methods
+        .donate(new BN(lamports))
+        .accounts({
+          raffleState: raffleStateAddress,
+          participant: wallet.publicKey,
+          treasury: treasuryPDA,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc()
+
+      console.log('Donation complete:', tx)
+      await fetchRaffleState()
+    } catch (error) {
+      console.error('Error donating:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -373,177 +368,154 @@ const SolanaRaffleApp = () => {
       <h1>Solana Raffle System</h1>
 
       <div style={{ marginBottom: '20px' }}>
-        <WalletButton />
+        <WalletMultiButtonDynamic />
       </div>
 
       {wallet.connected && (
         <div>
-          <p>Connected Wallet: {wallet.publicKey?.toString()}</p>
-          <button
-            onClick={fetchRaffleState}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#1976d2',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              marginBottom: '15px',
-              cursor: 'pointer',
-            }}
-          >
-            Refresh Raffle Data
-          </button>
-
+          {/* Raffle Selection Dropdown */}
           <div style={{ marginBottom: '20px' }}>
-            <h3>Select Raffle</h3>
             <select
               value={selectedRaffle || ''}
-              onChange={(e) => handleRaffleSelect(e.target.value)}
+              onChange={(e) => {
+                setSelectedRaffle(e.target.value)
+                const raffle = raffles.find(r => r.publicKey.toString() === e.target.value)
+                if (raffle) setIsAdmin(checkIfAdmin(raffle.account))
+              }}
               style={{
-                padding: '8px 16px',
+                width: '100%',
+                padding: '10px',
                 borderRadius: '4px',
                 border: '1px solid #ccc',
-                width: '100%',
-                backgroundColor: 'white',
-                fontSize: '16px',
+                marginBottom: '10px',
               }}
             >
               <option value="">Select a raffle...</option>
-              {[...raffles]
+              {raffles
                 .sort((a, b) => b.publicKey.toString().localeCompare(a.publicKey.toString()))
                 .map((raffle) => (
                   <option key={raffle.publicKey.toString()} value={raffle.publicKey.toString()}>
-                    Raffle {raffle.publicKey.toString().slice(0, 8)}... (
-                    {raffle.account.totalSol.toString() / LAMPORTS_PER_SOL} SOL)
+                    Raffle {raffle.publicKey.toString().slice(0, 8)}... ({raffle.account.totalSol.toString() / LAMPORTS_PER_SOL} SOL)
                   </option>
                 ))}
             </select>
           </div>
 
-          {selectedRaffle && (
-            <>
-              <div style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '4px', marginBottom: '20px' }}>
-                <h3>Donate to Raffle</h3>
-                <div style={{ display: 'flex', marginBottom: '10px' }}>
-                  <input
-                    type="number"
-                    value={donationAmount}
-                    onChange={(e) => setDonationAmount(e.target.value)}
-                    style={{
-                      padding: '8px',
-                      marginRight: '10px',
-                      borderRadius: '4px',
-                      border: '1px solid #ccc',
-                      width: '100px',
-                    }}
-                    min="0.01"
-                    step="0.01"
-                  />
-                  <span style={{ lineHeight: '36px' }}>SOL</span>
-                </div>
+          {/* Admin Panel */}
+          {isAdmin && (
+            <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #ccc', borderRadius: '4px' }}>
+              <h3>Admin Controls</h3>
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <button
-                  onClick={handleDonate}
+                  onClick={handleCreateRaffle}
                   disabled={loading}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: '#512da8',
+                    backgroundColor: '#4CAF50',
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
                     cursor: loading ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {loading ? 'Processing...' : 'Donate'}
+                  Create New Raffle
+                </button>
+                <button
+                  onClick={handleSelectWinner}
+                  disabled={loading || !selectedRaffle}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#2196F3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  Select Winner
+                </button>
+                <button
+                  onClick={handleWithdraw}
+                  disabled={loading || !selectedRaffle}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  Withdraw Funds
                 </button>
               </div>
+            </div>
+          )}
 
-              {isAdmin && (
-                <div style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '4px', marginBottom: '20px' }}>
-                  <h3>Admin Actions</h3>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <button
-                      onClick={handleCreateRaffle}
-                      disabled={loading}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#4caf50',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      {loading ? 'Processing...' : 'Create New Raffle'}
-                    </button>
-                    
-                    {selectedRaffle && (
-                      <>
-                        <button
-                          onClick={handleSelectWinner}
-                          disabled={loading}
-                          style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#2196f3',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          {loading ? 'Processing...' : 'Select Winner'}
-                        </button>
-                        
-                        <button
-                          onClick={handleWithdraw}
-                          disabled={loading}
-                          style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#d32f2f',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          {loading ? 'Processing...' : 'Withdraw Funds'}
-                        </button>
-                      </>
-                    )}
-                  </div>
+          {/* Selected Raffle Information */}
+          {selectedRaffle && (
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ padding: '15px', border: '1px solid #ccc', borderRadius: '4px', marginBottom: '20px' }}>
+                <h3>Participate in Raffle</h3>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
+                  <input
+                    type="number"
+                    value={donationAmount}
+                    onChange={(e) => setDonationAmount(e.target.value)}
+                    min="0.1"
+                    step="0.1"
+                    style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                  />
+                  <span>SOL</span>
+                  <button
+                    onClick={handleDonate}
+                    disabled={loading}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#9c27b0',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    Donate
+                  </button>
                 </div>
-              )}
+              </div>
 
-              {raffles.map(
-                (raffle) =>
-                  raffle.publicKey.toString() === selectedRaffle && (
-                    <div
-                      key={raffle.publicKey.toString()}
-                      style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '4px' }}
-                    >
-                      <h3>Raffle Status</h3>
-                      <p>Raffle ID: {raffle.publicKey.toString()}</p>
-                      <p>Total SOL: {raffle.account.totalSol.toString() / LAMPORTS_PER_SOL}</p>
-                      <p>Threshold reached: {raffle.account.thresholdReached ? 'Yes' : 'No'}</p>
-                      <p>Winner selected: {raffle.account.winnerSelected ? 'Yes' : 'No'}</p>
-                      {raffle.account.winnerSelected && <p>Winner: {raffle.account.winner.toString()}</p>}
-                      <p>Total participants: {raffle.account.participantCount.toString()}</p>
-
-                      <div style={{ marginTop: '10px' }}>
-                        <h4>Participants</h4>
-                        <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                          {raffle.account.participants.map((participant, index) => (
-                            <div key={index} style={{ marginBottom: '5px' }}>
-                              <small>
-                                {participant.wallet.toString()} - {participant.tokens.toString()} tickets
-                              </small>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+              {/* Raffle Details */}
+              {raffles.map((raffle) =>
+                raffle.publicKey.toString() === selectedRaffle ? (
+                  <div key={raffle.publicKey.toString()} style={{ padding: '15px', border: '1px solid #ccc', borderRadius: '4px' }}>
+                    <h3>Raffle Information</h3>
+                    <div style={{ marginBottom: '15px' }}>
+                      <p>Total Pool: {raffle.account.totalSol.toString() / LAMPORTS_PER_SOL} SOL</p>
+                      <p>Status: {raffle.account.winnerSelected ? 'Completed' : 'Active'}</p>
+                      <p>Participants: {raffle.account.participantCount.toString()}</p>
+                      {wallet.publicKey && (
+                        <p>Your Win Probability: {calculateWinningProbability(raffle.account, wallet.publicKey)}</p>
+                      )}
+                      {raffle.account.winnerSelected && (
+                        <p>Winner: {raffle.account.winner.toString()}</p>
+                      )}
                     </div>
-                  ),
+
+                    <h4>Participants</h4>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', fontSize: '14px' }}>
+                      {raffle.account.participants.map((participant, index) => (
+                        <div key={index} style={{ marginBottom: '5px', padding: '5px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+                          <span>{participant.wallet.toString().slice(0, 8)}...</span>
+                          <span style={{ float: 'right' }}>
+                            {participant.tokens.toString()} tickets ({calculateWinningProbability(raffle.account, participant.wallet)})
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null
               )}
-            </>
+            </div>
           )}
         </div>
       )}

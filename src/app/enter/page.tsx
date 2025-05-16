@@ -16,6 +16,7 @@ import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import '@solana/wallet-adapter-react-ui/styles.css'
 import { WalletButton } from '@/components/solana/solana-provider'
+import dynamic from 'next/dynamic'
 
 type Participant = {
   wallet: PublicKey
@@ -372,6 +373,11 @@ const RafflePageContent = () => {
     return '0%'
   }
 
+  const WalletMultiButtonDynamic = dynamic(
+    async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
+    { ssr: false },
+  )
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -514,7 +520,7 @@ const RafflePageContent = () => {
               {!wallet.connected ? (
                 <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-6 text-center">
                   <p className="text-gray-600">Connect your wallet to enter raffles and see your win probability.</p>
-                  <WalletMultiButton />
+                  <WalletMultiButtonDynamic />
                 </div>
               ) : raffleState ? (
                 <div className="space-y-6">
