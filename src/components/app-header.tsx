@@ -46,10 +46,10 @@ export function AppHeader({ links = [] }: { links: { label: string; path: string
         </div>
 
         <div className="hidden md:flex items-center gap-5">
-          <WalletButton
+          {/* <WalletButton
             size="sm"
             className="shadow hover:shadow-md bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md transition-all duration-200 hover:translate-y-[-1px]"
-          />
+          /> */}
           <ClusterButton
             size="sm"
             className="shadow hover:shadow-md bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md transition-all duration-200 hover:translate-y-[-1px]"
@@ -57,7 +57,6 @@ export function AppHeader({ links = [] }: { links: { label: string; path: string
           <ThemeSelect className="shadow hover:shadow-md bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md transition-all duration-200 hover:translate-y-[-1px]" />
         </div>
 
-        {/* Mobile menu button */}
         <Button
           variant="ghost"
           size="icon"

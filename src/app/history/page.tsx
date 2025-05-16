@@ -484,23 +484,6 @@ const HistoryPage = () => {
           </div>
         )}
       </section>
-
-      <section className="bg-background border rounded-lg p-8">
-        <div className="flex flex-col md:flex-row gap-6 items-center">
-          <div className="md:w-2/3">
-            <h2 className="text-2xl font-semibold mb-2">Don&apos;t Miss Your Prize!</h2>
-            <p className="text-muted-foreground">
-              Winners have 30 days to claim their prizes. Make sure to check your account regularly and keep your wallet
-              connected.
-            </p>
-          </div>
-          <div className="md:w-1/3 flex justify-center">
-            <Button size="lg" className="w-full md:w-auto">
-              Connect Wallet
-            </Button>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }

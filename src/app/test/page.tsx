@@ -8,28 +8,28 @@ import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adap
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 
 import '@solana/wallet-adapter-react-ui/styles.css'
+// import { WalletButton } from '@/components/solana/solana-provider'
 
-// Define types for our program
 type Participant = {
-  wallet: PublicKey;
-  tokens: BN;
-};
+  wallet: PublicKey
+  tokens: BN
+}
 
 type RaffleState = {
-  admin: PublicKey;
-  treasury: PublicKey;
-  adminAuth1: PublicKey;
-  adminAuth2: PublicKey;
-  adminAuth3: PublicKey;
-  payoutWallet: PublicKey;
-  totalSol: BN;
-  thresholdReached: boolean;
-  winnerSelected: boolean;
-  winner: PublicKey;
-  participants: Participant[];
-  participantCount: BN;
-  blacklist: PublicKey[];
-};
+  admin: PublicKey
+  treasury: PublicKey
+  adminAuth1: PublicKey
+  adminAuth2: PublicKey
+  adminAuth3: PublicKey
+  payoutWallet: PublicKey
+  totalSol: BN
+  thresholdReached: boolean
+  winnerSelected: boolean
+  winner: PublicKey
+  participants: Participant[]
+  participantCount: BN
+  blacklist: PublicKey[]
+}
 
 const idl = {
   version: '0.1.0',
@@ -132,12 +132,26 @@ const findTreasuryPDA = (programId: PublicKey) => {
 
 const WalletContextProvider = ({ children }: { children: React.ReactNode }) => {
   const network = 'devnet'
+
+  // Initialize wallet adapters with detailed error handling
   const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()]
+
+  console.log('[Wallet Debug] Initializing Wallet Context Provider')
+  console.log('[Wallet Debug] Network:', network)
+  console.log('[Wallet Debug] Available wallets:', wallets.map((w) => w.name).join(', '))
+
   const endpoint = clusterApiUrl(network)
+  console.log('[Wallet Debug] RPC endpoint:', endpoint)
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider
+        wallets={wallets}
+        autoConnect={false}
+        onError={(error) => {
+          console.error('[Wallet Provider Error]', error instanceof Error ? error.message : String(error))
+        }}
+      >
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
@@ -146,7 +160,6 @@ const WalletContextProvider = ({ children }: { children: React.ReactNode }) => {
 
 const SolanaRaffleApp = () => {
   const wallet = useWallet()
-  console.log('hello', wallet)
   const [program, setProgram] = useState<Program<Idl> | null>(null)
   const [raffleAccounts, setRaffleAccounts] = useState<PublicKey[]>([])
   const [selectedRaffle, setSelectedRaffle] = useState<PublicKey | null>(null)
@@ -155,76 +168,189 @@ const SolanaRaffleApp = () => {
   const [loading, setLoading] = useState(false)
   const [statusMessage, setStatusMessage] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<string>('disconnected')
+  const [connectionError, setConnectionError] = useState<string | null>(null)
+  const [isManualConnect, setIsManualConnect] = useState(false)
 
-  // Define fetchRaffleState first
-  const fetchRaffleState = useCallback(async (raffleAccount: PublicKey, programInstance: Program<Idl> | null) => {
-    if (!raffleAccount) return
+  // Add state variables to track fetching and connection states
+  const [isFetchingState, setIsFetchingState] = useState(false)
+  const [connectAttemptCount, setConnectAttemptCount] = useState(0)
 
-    const prgInstance = programInstance || program
-    if (!prgInstance) return
+  // Handle wallet disconnection on component mount
+  useEffect(() => {
+    const forceDisconnectWallet = async () => {
+      try {
+        console.log('[Wallet Debug] Wallet connection status on page load:', wallet.connected ? 'connected' : 'disconnected')
+        console.log('[Wallet Debug] Wallet public key:', wallet.publicKey?.toString() || 'none')
+      
+        // Only disconnect if it's actually connected
+        if (wallet.connected) {
+          console.log('[Wallet Debug] Forcefully disconnecting wallet on page load')
+          await wallet.disconnect()
+          setConnectionStatus('forcefully disconnected')
+          setConnectionError(null)
+          
+          // Reset any previous state
+          setSelectedRaffle(null)
+          setRaffleState(null)
+          setRaffleAccounts([])
+          
+          console.log('[Wallet Debug] Wallet has been forcefully disconnected')
+        } else {
+          console.log('[Wallet Debug] No wallet was connected, skipping disconnect')
+          setConnectionStatus('disconnected')
+        }
+      } catch (error) {
+        console.error('Error disconnecting wallet:', error)
+        setConnectionStatus('error disconnecting')
+        setConnectionError(error instanceof Error ? error.message : 'Unknown error disconnecting wallet')
+      }
+    }
 
-    try {
-      setLoading(true)
-      setStatusMessage('Loading raffle data...')
+    forceDisconnectWallet()
 
-      const state = await prgInstance.account.raffleState.fetch(raffleAccount)
-      setRaffleState(state as RaffleState)
+    console.log('[Wallet Debug] Setting up wallet event listeners')
 
-      // Check if connected wallet is admin
-      if (wallet.publicKey) {
-        const isAdminWallet =
-          state.admin.equals(wallet.publicKey) ||
-          state.adminAuth1.equals(wallet.publicKey) ||
-          state.adminAuth2.equals(wallet.publicKey) ||
-          state.adminAuth3.equals(wallet.publicKey)
+    // Instead of trying to use adapter events (which is causing TypeScript errors),
+    // we'll rely on watching wallet.connected changes via the useEffect below
+    console.log('[Wallet Debug] Wallet setup initialized')
 
-        setIsAdmin(isAdminWallet)
+    return () => {
+      console.log('[Wallet Debug] Cleaning up wallet event listeners')
+    }
+  }, [wallet])
+
+  // Add fallback effect to watch wallet connection state changes
+  useEffect(() => {
+    // Watch for wallet connection changes
+    if (wallet.connected) {
+      console.log('[Wallet Debug] Wallet is connected on effect run')
+      setConnectionStatus('connected')
+      setConnectionError(null)
+      setIsManualConnect(false) // Reset manual connect flag when connected
+    } else {
+      console.log('[Wallet Debug] Wallet is not connected on effect run')
+      setConnectionStatus('disconnected')
+    }
+    
+    // Set up watchers for future wallet.connected changes
+    return () => {
+      // Cleanup not needed since we're just watching wallet.connected
+    }
+  }, [wallet.connected, connectAttemptCount])
+
+  const fetchRaffleState = useCallback(
+    async (raffleAccount: PublicKey, programInstance: Program<Idl> | null) => {
+      if (!raffleAccount) return
+
+      // Don't run multiple fetches at the same time
+      if (isFetchingState) {
+        console.log('[Wallet Debug] Already fetching state, skipping...')
+        return
       }
 
-      setStatusMessage('Raffle data loaded')
-      setLoading(false)
-    } catch (error: unknown) {
-      console.error('Error fetching raffle state:', error)
-      setStatusMessage(`Error: ${error instanceof Error ? error.message : String(error)}`)
-      setLoading(false)
-    }
-  }, [program, wallet.publicKey])
+      const prgInstance = programInstance || program
+      if (!prgInstance) return
+
+      try {
+        setIsFetchingState(true)
+        setLoading(true)
+        setStatusMessage('Loading raffle data...')
+
+        const state = await prgInstance.account.raffleState.fetch(raffleAccount)
+        setRaffleState(state as RaffleState)
+
+        if (wallet.publicKey) {
+          const isAdminWallet =
+            state.admin.equals(wallet.publicKey) ||
+            state.adminAuth1.equals(wallet.publicKey) ||
+            state.adminAuth2.equals(wallet.publicKey) ||
+            state.adminAuth3.equals(wallet.publicKey)
+
+          setIsAdmin(isAdminWallet)
+        }
+
+        setStatusMessage('Raffle data loaded')
+        setLoading(false)
+      } catch (error: unknown) {
+        console.error('Error fetching raffle state:', error)
+        setStatusMessage(`Error: ${error instanceof Error ? error.message : String(error)}`)
+        setLoading(false)
+      } finally {
+        // Ensure we always clear the flag
+        setIsFetchingState(false)
+      }
+    },
+    [program, wallet.publicKey, isFetchingState],
+  )
+
+  // Define a state to track fetching status
+  const [isFetchingAccounts, setIsFetchingAccounts] = useState(false)
 
   // Define fetchRaffleAccounts function
-  const fetchRaffleAccounts = useCallback(async (programInstance: Program<Idl>) => {
-    try {
-      setLoading(true)
-      setStatusMessage('Fetching raffle accounts...')
-
-      const accounts = await programInstance.account.raffleState.all()
-      setRaffleAccounts(accounts.map((acc) => acc.publicKey))
-
-      if (accounts.length > 0 && !selectedRaffle) {
-        setSelectedRaffle(accounts[0].publicKey)
-        await fetchRaffleState(accounts[0].publicKey, programInstance)
+  const fetchRaffleAccounts = useCallback(
+    async (programInstance: Program<Idl>) => {
+      // Clear selected raffle when fetching new accounts
+      // We track this state externally rather than using selectedRaffle in the dependency array
+      const currentSelectedRaffle = selectedRaffle
+      if (currentSelectedRaffle) {
+        setSelectedRaffle(null)
       }
 
-      setStatusMessage(`Found ${accounts.length} raffle account(s)`)
-      setLoading(false)
-    } catch (error: unknown) {
-      console.error('Error fetching raffle accounts:', error)
-      setStatusMessage(`Error: ${error instanceof Error ? error.message : String(error)}`)
-      setLoading(false)
-    }
-  }, [selectedRaffle, fetchRaffleState])
+      // Prevent multiple concurrent fetches that can lead to 429 errors
+      if (isFetchingAccounts) {
+        console.log('[Wallet Debug] Already fetching accounts, skipping...')
+        return
+      }
+
+      try {
+        setIsFetchingAccounts(true)
+        setLoading(true)
+        setStatusMessage('Fetching raffle accounts...')
+
+        const accounts = await programInstance.account.raffleState.all()
+        setRaffleAccounts(accounts.map((acc) => acc.publicKey))
+
+        if (accounts.length > 0 && !currentSelectedRaffle) {
+          const firstAccount = accounts[0].publicKey
+          setSelectedRaffle(firstAccount)
+
+          // Add a delay before fetching state to avoid rate limiting
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+
+          // Only fetch if we're not already fetching state
+          if (!isFetchingState) {
+            await fetchRaffleState(firstAccount, programInstance)
+          }
+        }
+
+        setStatusMessage(`Found ${accounts.length} raffle account(s)`)
+        setLoading(false)
+      } catch (error: unknown) {
+        console.error('Error fetching raffle accounts:', error)
+        setStatusMessage(`Error: ${error instanceof Error ? error.message : String(error)}`)
+        setLoading(false)
+      } finally {
+        // Ensure we always clear the flag
+        setIsFetchingAccounts(false)
+      }
+    },
+    [fetchRaffleState, isFetchingState, isFetchingAccounts, selectedRaffle],
+  )
 
   // Initialize Anchor program
   const initializeProgram = useCallback(() => {
     try {
+      console.log('[Wallet Debug] Initializing program, wallet connected:', wallet.connected)
       const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
       const provider = new AnchorProvider(
-        connection, 
-        wallet as unknown as { 
-          publicKey: PublicKey; 
-          signTransaction: <T>(tx: T) => Promise<T>; 
-          signAllTransactions: <T>(txs: T[]) => Promise<T[]>; 
-        }, 
-        { commitment: 'confirmed' }
+        connection,
+        wallet as unknown as {
+          publicKey: PublicKey
+          signTransaction: <T>(tx: T) => Promise<T>
+          signAllTransactions: <T>(txs: T[]) => Promise<T[]>
+        },
+        { commitment: 'confirmed' },
       )
       const program = new Program(idl as Idl, programId, provider)
       setProgram(program)
@@ -237,18 +363,36 @@ const SolanaRaffleApp = () => {
     }
   }, [wallet, fetchRaffleAccounts])
 
+  // Track the last time we initialized to prevent frequent re-initializations
+  const [lastInitTime, setLastInitTime] = useState(0)
+
   useEffect(() => {
     if (wallet && wallet.connected && wallet.publicKey) {
       console.log('Wallet connected:', wallet.publicKey.toString())
-      initializeProgram()
+
+      // Add rate limiting to prevent too many initializations
+      const now = Date.now()
+      if (now - lastInitTime > 5000) {
+        // Only initialize every 5+ seconds
+        setLastInitTime(now)
+        initializeProgram()
+      } else {
+        console.log('Skipping initialization, too soon after last one')
+      }
     }
-  }, [wallet, wallet.connected, wallet.publicKey, initializeProgram])
+  }, [wallet, wallet.connected, wallet.publicKey, initializeProgram, lastInitTime])
 
   // The functions are now defined above
 
   // Initialize a new raffle
   const initializeRaffle = async () => {
     if (!program || !wallet.publicKey) return
+
+    // Don't initialize if we're already loading
+    if (loading || isFetchingAccounts || isFetchingState) {
+      setStatusMessage('Already processing another request, please wait...')
+      return
+    }
 
     try {
       setLoading(true)
@@ -270,13 +414,13 @@ const SolanaRaffleApp = () => {
 
       setStatusMessage(`Raffle created! TX: ${tx.substring(0, 8)}...`)
 
-      // Wait for blockchain to update
+      // Wait for blockchain to update with longer delay to avoid 429s
       setTimeout(async () => {
-        if (program) {
+        if (program && !isFetchingAccounts && !isFetchingState) {
           await fetchRaffleAccounts(program)
           setSelectedRaffle(raffleKeypair.publicKey)
         }
-      }, 2000)
+      }, 3000)
 
       setLoading(false)
     } catch (error: unknown) {
@@ -289,6 +433,12 @@ const SolanaRaffleApp = () => {
   // Donate to raffle
   const donateToRaffle = async () => {
     if (!program || !wallet.publicKey || !selectedRaffle) return
+
+    // Prevent concurrent operations
+    if (loading || isFetchingAccounts || isFetchingState) {
+      setStatusMessage('Already processing another request, please wait...')
+      return
+    }
 
     try {
       setLoading(true)
@@ -310,8 +460,12 @@ const SolanaRaffleApp = () => {
 
       setStatusMessage(`Donated ${donationAmount} SOL! TX: ${tx.substring(0, 8)}...`)
 
-      // Refresh the raffle state
-      setTimeout(() => fetchRaffleState(selectedRaffle, null), 2000)
+      // Refresh the raffle state with a longer delay to avoid 429s
+      setTimeout(() => {
+        if (!isFetchingState && selectedRaffle) {
+          fetchRaffleState(selectedRaffle, null)
+        }
+      }, 3000)
 
       setLoading(false)
     } catch (error: unknown) {
@@ -333,9 +487,10 @@ const SolanaRaffleApp = () => {
       const recentSlotHashPubkey = new PublicKey('SysvarS1otHashes111111111111111111111111111')
 
       // Use first participant or admin as winner account (actual winner is determined by the program)
-      const winnerAccount = raffleState.participants && raffleState.participants.length > 0 
-        ? raffleState.participants[0].wallet 
-        : wallet.publicKey
+      const winnerAccount =
+        raffleState.participants && raffleState.participants.length > 0
+          ? raffleState.participants[0].wallet
+          : wallet.publicKey
 
       // Call the selectWinner instruction
       const tx = await program.methods
@@ -412,9 +567,16 @@ const SolanaRaffleApp = () => {
   // Handle selection of a raffle from dropdown
   const handleRaffleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = e.target.value
-    if (selected) {
-      setSelectedRaffle(new PublicKey(selected))
-      fetchRaffleState(new PublicKey(selected), null)
+    if (selected && !isFetchingState) {
+      const pubkey = new PublicKey(selected)
+      setSelectedRaffle(pubkey)
+
+      // Add a small delay before fetching state to avoid rate limiting
+      setTimeout(() => {
+        if (!isFetchingState) {
+          fetchRaffleState(pubkey, null)
+        }
+      }, 500)
     }
   }
 
@@ -432,15 +594,71 @@ const SolanaRaffleApp = () => {
     <div className="bg-white shadow-md rounded-lg max-w-4xl mx-auto my-8 p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-blue-800">50/50 Solana Raffle</h1>
+        <div className="flex items-center">
+          <div className="mr-3">
+            <span
+              className={`px-2 py-1 rounded text-sm ${
+                wallet.connected
+                   ? 'bg-green-100 text-green-800'
+                   : connectionStatus === 'error'
+                     ? 'bg-red-100 text-red-800'
+                     : connectionStatus === 'connecting' || isManualConnect
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-yellow-100 text-yellow-800'
+              }`}
+            >
+              {wallet.connected
+                ? 'Wallet Connected'
+                : connectionStatus === 'error'
+                  ? 'Connection Error'
+                  : connectionStatus === 'connecting' || isManualConnect
+                    ? 'Connecting...'
+                    : 'Wallet Disconnected'}
+            </span>
+          </div>
+          <WalletMultiButton className="wallet-adapter-button-trigger" />
+        </div>
       </div>
 
       <div className="mb-4 p-4 bg-blue-50 rounded">
         <p>For every {THRESHOLD_SOL} SOL collected, 50% goes to a randomly selected participant.</p>
+        {!wallet.connected && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-2">
+            <p className="text-yellow-700">Please connect your wallet to participate in the raffle.</p>
+            <p className="text-xs text-yellow-600 mt-1">
+              Note: Wallets are now manually connected for better stability.
+            </p>
+            <WalletMultiButton 
+              className="mt-2 text-sm py-2 px-4 wallet-adapter-button-primary"
+              onClick={() => {
+                console.log('[Wallet Debug] Manual connect button clicked');
+                setIsManualConnect(true);
+                setConnectionStatus('connecting');
+                setConnectAttemptCount(prev => prev + 1);
+              }}
+            />
+            {connectionError && (
+              <div className="mt-2">
+                <p className="text-red-600 text-xs font-semibold">Error:</p>
+                <p className="text-red-600 text-xs break-words">{connectionError}</p>
+                <button
+                  onClick={() => {
+                    console.log('[Wallet Debug] Clearing error state')
+                    setConnectionError(null)
+                  }}
+                  className="mt-1 text-xs bg-red-100 hover:bg-red-200 text-red-800 font-bold py-1 px-2 rounded"
+                >
+                  Clear Error
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         <p className="text-sm mt-2">
-          Connected to:{' '}
+          Status:{' '}
           {wallet.connected && wallet.publicKey
-            ? `${wallet.publicKey.toString().substring(0, 6)}...${wallet.publicKey.toString().substring(wallet.publicKey.toString().length - 4)}`
-            : 'Not connected'}
+            ? <span className="font-semibold text-green-700">{`Connected to ${wallet.publicKey.toString().substring(0, 6)}...${wallet.publicKey.toString().substring(wallet.publicKey.toString().length - 4)}`}</span>
+            : <span className="font-semibold text-yellow-700">Not connected</span>}
         </p>
       </div>
 
@@ -509,7 +727,7 @@ const SolanaRaffleApp = () => {
 
                 <div className="bg-blue-50 p-3 rounded">
                   <h3 className="text-sm font-medium">Participants</h3>
-                  <p className="text-xl font-bold">{raffleState?.participantCount?.toString() || "0"}</p>
+                  <p className="text-xl font-bold">{raffleState?.participantCount?.toString() || '0'}</p>
                 </div>
 
                 <div className="bg-blue-50 p-3 rounded">
@@ -620,7 +838,15 @@ const SolanaRaffleApp = () => {
           <h2 className="text-xl font-medium text-yellow-800 mb-2">Connect Your Wallet</h2>
           <p>Please connect your Solana wallet using the button in the top-right corner to interact with the raffle.</p>
           <p className="text-sm mt-2">Make sure your wallet is connected to Solana Devnet for testing.</p>
-          <WalletMultiButton />
+          <WalletMultiButton 
+            className="mt-4 py-2 px-4 wallet-adapter-button-primary"
+            onClick={() => {
+              console.log('[Wallet Debug] Connect button clicked from main panel');
+              setIsManualConnect(true);
+              setConnectionStatus('connecting');
+              setConnectAttemptCount(prev => prev + 1);
+            }}
+          />
         </div>
       )}
     </div>
@@ -628,6 +854,63 @@ const SolanaRaffleApp = () => {
 }
 
 const RaffleApp = () => {
+  // Force disconnects wallets on page refresh/load by setting autoConnect to false
+  // and requiring manual wallet connection
+  
+  // Add a useEffect at the app level to log initialization and ensure consistent state
+  React.useEffect(() => {
+    console.log('[Wallet Debug] RaffleApp component mounted')
+    console.log('[Wallet Debug] Page initialization timestamp:', new Date().toISOString())
+    
+    // Log browser information for debugging
+    console.log('[Wallet Debug] User Agent:', navigator.userAgent)
+    console.log('[Wallet Debug] Window Location:', window.location.href)
+    
+    // Reset any previous wallet state
+    const solanaWindow = window as Window & { 
+      solana?: { disconnect: () => void } 
+    };
+    
+    if (solanaWindow.solana && typeof solanaWindow.solana.disconnect === 'function') {
+      try {
+        console.log('[Wallet Debug] Attempting to disconnect window.solana');
+        solanaWindow.solana.disconnect();
+      } catch (e) {
+        console.log('[Wallet Debug] Error disconnecting window.solana:', e);
+      }
+    }
+    
+    // Force clean wallet state on page load
+    const cleanupLocalStorage = () => {
+      try {
+        // Clean up any lingering wallet connect states that might be causing issues
+        const walletKeys = Object.keys(localStorage).filter(key => 
+          key.includes('walletName') || 
+          key.includes('wallet') || 
+          key.includes('autoConnect')
+        );
+      
+        console.log('[Wallet Debug] Cleaning up wallet localStorage items:', walletKeys.length);
+        walletKeys.forEach(key => {
+          console.log('[Wallet Debug] Removing localStorage item:', key);
+          localStorage.removeItem(key);
+        });
+      
+        // Also set session storage to avoid Wallet multi-tab issues
+        sessionStorage.setItem('walletConnectionCleaned', 'true');
+        sessionStorage.setItem('walletConnectionTimestamp', Date.now().toString());
+      } catch (err) {
+        console.error('[Wallet Debug] Error cleaning localStorage:', err);
+      }
+    };
+  
+    cleanupLocalStorage();
+    
+    return () => {
+      console.log('[Wallet Debug] RaffleApp component unmounted')
+    }
+  }, [])
+
   return (
     <WalletContextProvider>
       <SolanaRaffleApp />

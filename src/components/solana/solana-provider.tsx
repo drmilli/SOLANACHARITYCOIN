@@ -27,12 +27,8 @@ type ClusterButtonProps = {
 }
 
 // Wrapper components that handle className
-export function WalletButton({ className, ...props }: WalletButtonProps) {
-  return (
-    <div className={className}>
-      <OriginalWalletButton {...props} />
-    </div>
-  )
+export function WalletButton({ ...props }: WalletButtonProps) {
+  return <OriginalWalletButton {...props} />
 }
 
 export function ClusterButton({ className, ...props }: ClusterButtonProps) {

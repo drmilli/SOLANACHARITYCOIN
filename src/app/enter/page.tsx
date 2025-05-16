@@ -15,6 +15,7 @@ import { Coins, Gift, Trophy, Users } from 'lucide-react'
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import '@solana/wallet-adapter-react-ui/styles.css'
+import { WalletButton } from '@/components/solana/solana-provider'
 
 type Participant = {
   wallet: PublicKey
@@ -193,17 +194,16 @@ const RafflePageContent = () => {
         const accounts = await programInstance.account.raffleState.all()
         setRaffleAccounts(accounts.map((acc) => acc.publicKey))
 
-        if (accounts.length > 0) {
-          // Only update if necessary to prevent infinite loops
-          if (!selectedRaffle) {
-            setSelectedRaffle(accounts[0].publicKey)
-            await fetchRaffleState(accounts[0].publicKey, programInstance)
-          } else {
-            const isStillValid = accounts.some((acc) => acc.publicKey.equals(selectedRaffle))
-            if (!isStillValid) {
-              setSelectedRaffle(accounts[0].publicKey)
-              await fetchRaffleState(accounts[0].publicKey, programInstance)
-            }
+        if (accounts.length > 0 && !selectedRaffle) {
+          const firstAccount = accounts[0].publicKey
+          setSelectedRaffle(firstAccount)
+          await fetchRaffleState(firstAccount, programInstance)
+        } else if (accounts.length > 0 && selectedRaffle) {
+          const isStillValid = accounts.some((acc) => acc.publicKey.equals(selectedRaffle))
+          if (!isStillValid) {
+            const firstAccount = accounts[0].publicKey
+            setSelectedRaffle(firstAccount)
+            await fetchRaffleState(firstAccount, programInstance)
           }
         } else if (accounts.length === 0) {
           setRaffleState(null)
@@ -217,7 +217,7 @@ const RafflePageContent = () => {
         setLoading(false)
       }
     },
-    [fetchRaffleState], // Remove selectedRaffle from dependencies
+    [fetchRaffleState], // Remove selectedRaffle from dependencies to break the cycle
   )
 
   const initializeProgram = useCallback(async () => {
@@ -297,7 +297,6 @@ const RafflePageContent = () => {
 
       setStatusMessage(`Donated ${donationAmount} SOL! TX: ${tx.substring(0, 8)}...`)
 
-      // Refresh the raffle state - use a ref to avoid stale closure issues
       setTimeout(() => {
         if (selectedRaffle) {
           fetchRaffleState(selectedRaffle, null)
@@ -318,7 +317,6 @@ const RafflePageContent = () => {
     }
   }
 
-  // Format SOL amount from lamports
   const formatSOL = (lamports: BN | null | undefined) => {
     if (!lamports) return '0'
     try {
@@ -328,7 +326,6 @@ const RafflePageContent = () => {
     }
   }
 
-  // Handle selection of a raffle from dropdown
   const handleRaffleSelect = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const selected = e.target.value
@@ -393,7 +390,7 @@ const RafflePageContent = () => {
               {!wallet.connected ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <p className="mb-4 text-gray-600">Connect your wallet to participate in raffles.</p>
-                  <WalletMultiButton />
+                  <WalletButton />{' '}
                 </div>
               ) : raffleAccounts.length > 0 ? (
                 <div>
