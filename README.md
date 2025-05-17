@@ -75,11 +75,9 @@ The solutions that we came up with to solve these problems:
 
 ### Deep dive
 
-Check the READMEs in the individual package folders
+[The Black History Foundation](https://tbhfdn.org/)
 
-[Configure a new marketplace!](https://github.com/5eh/Arthur-Labs-Polkadot-Prodigy/tree/main/frontend/src/marketplaceVariables)
-
-[Smart contracts](https://github.com/5eh/Arthur-Labs-Polkadot-Prodigy/blob/main/contracts/readme.md)
+[Program ID](https://github.com/BlackHistoryDAO/SOLANACHARITYCOIN/blob/main/raffle/programs/raffle/src/lib.rs)
 
 ### Contact
 
