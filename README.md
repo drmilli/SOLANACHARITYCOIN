@@ -5,13 +5,17 @@
 <h3 align="center">WHITELABEL 50/50 RAFFLE</h3>
   <p align="center">
   <br />
-    <a href="https://www.loom.com/share/92f62aa749bd42df83549c2a286b1c46">Technical Video</a>
+    <a href="https://vimeo.com/1085198328">Technical Video</a>
     ·
     <a href="https://www.youtube.com/watch?v=wbvuLKwJRlI">Overview Video</a>
     ·
     <a href="https://github.com/BlackHistoryDAO/SOLANACHARITYCOIN">Repo</a>
   </p>
 </div>
+
+<a href="https://vimeo.com/1085198328" target="_blank">
+  <img src="https://i.ibb.co/RxHxF7w/Screenshot-20250517-092036.png" alt="Video Preview" width="600">
+</a>
 
 ### About the hack
 
