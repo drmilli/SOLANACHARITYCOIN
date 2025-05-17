@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Connection, PublicKey, clusterApiUrl, SystemProgram, LAMPORTS_PER_SOL, SYSVAR_SLOT_HASHES_PUBKEY } from '@solana/web3.js'
-import { Program, BN, AnchorProvider, web3 } from '@project-serum/anchor'
+import { Program, BN, AnchorProvider, web3, Idl } from '@project-serum/anchor'
 import { useWallet, ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui'
@@ -162,19 +162,22 @@ const SolanaRaffleApp = () => {
   const [loading, setLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
 
-  useEffect(() => {
-    if (wallet.connected) {
-      fetchRaffleState()
-    }
-  }, [wallet.connected])
-
-  const getProgram = () => {
+  const getProgram = useCallback(() => {
     const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
-    const provider = new AnchorProvider(connection, wallet as any, { preflightCommitment: 'confirmed' })
-    return new Program(idl as any, programId, provider)
-  }
+    if (!wallet.publicKey || !wallet.signTransaction || !wallet.signAllTransactions) {
+      throw new Error('Wallet not fully initialized')
+    }
+    const walletAdapter = {
+      publicKey: wallet.publicKey,
+      signTransaction: wallet.signTransaction,
+      signAllTransactions: wallet.signAllTransactions,
+      payer: wallet.publicKey
+    }
+    const provider = new AnchorProvider(connection, walletAdapter, { preflightCommitment: 'confirmed' })
+    return new Program(idl as Idl, programId, provider)
+  }, [wallet.publicKey, wallet.signTransaction, wallet.signAllTransactions])
 
-  const checkIfAdmin = (raffle: RaffleState) => {
+  const checkIfAdmin = useCallback((raffle: RaffleState) => {
     if (!wallet.publicKey) return false
     const walletKey = wallet.publicKey.toString()
     return (
@@ -183,7 +186,7 @@ const SolanaRaffleApp = () => {
       raffle.adminAuth2.toString() === walletKey ||
       raffle.adminAuth3.toString() === walletKey
     )
-  }
+  }, [wallet.publicKey])
 
   const calculateWinningProbability = (raffle: RaffleState, participantWallet: PublicKey) => {
     const participant = raffle.participants.find(p => p.wallet.toString() === participantWallet.toString())
@@ -196,7 +199,7 @@ const SolanaRaffleApp = () => {
     return `${probability.toFixed(2)}%`
   }
 
-  const fetchRaffleState = async () => {
+  const fetchRaffleState = useCallback(async () => {
     if (!wallet.connected) return
 
     try {
@@ -219,12 +222,18 @@ const SolanaRaffleApp = () => {
         setSelectedRaffle(firstRaffle)
         setIsAdmin(checkIfAdmin(raffleAccounts[0].account))
       }
-    } catch (error) {
-      console.error('Error fetching raffle state:', error)
+    } catch (error: unknown) {
+      console.error('Error fetching raffle state:', error instanceof Error ? error.message : String(error))
     } finally {
       setLoading(false)
     }
-  }
+  }, [wallet.connected, getProgram, checkIfAdmin, selectedRaffle])
+
+  useEffect(() => {
+    if (wallet.connected) {
+      fetchRaffleState()
+    }
+  }, [wallet.connected, fetchRaffleState])
 
   const handleCreateRaffle = async () => {
     if (!wallet.connected || !wallet.publicKey) return
@@ -246,8 +255,8 @@ const SolanaRaffleApp = () => {
 
       console.log('Raffle created:', tx)
       await fetchRaffleState()
-    } catch (error) {
-      console.error('Error creating raffle:', error)
+    } catch (error: unknown) {
+      console.error('Error creating raffle:', error instanceof Error ? error.message : String(error))
     } finally {
       setLoading(false)
     }
@@ -294,9 +303,9 @@ const SolanaRaffleApp = () => {
 
       console.log('Winner selected:', tx)
       await fetchRaffleState()
-    } catch (error) {
-      console.error('Error selecting winner:', error)
-      alert(error.message || 'Failed to select winner')
+    } catch (error: unknown) {
+      console.error('Error selecting winner:', error instanceof Error ? error.message : String(error))
+      alert(error instanceof Error ? error.message : 'Failed to select winner')
     } finally {
       setLoading(false)
     }

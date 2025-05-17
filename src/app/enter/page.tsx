@@ -19,7 +19,7 @@ import dynamic from 'next/dynamic'
 
 const WalletMultiButtonDynamic = dynamic(
   async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
-  { ssr: false }
+  { ssr: false },
 )
 
 type Participant = {
@@ -178,18 +178,18 @@ const RaffleContent: React.FC = () => {
       setStatusMessage('Fetching raffle accounts...')
 
       const accounts = await program.account.raffleState.all()
-      const raffleAccounts = accounts.map(acc => ({
+      const raffleAccounts = accounts.map((acc) => ({
         publicKey: acc.publicKey,
-        account: acc.account as unknown as RaffleState
+        account: acc.account as unknown as RaffleState,
       }))
 
       // Separate active and completed raffles
-      const completed = raffleAccounts.filter(r => r.account.winnerSelected)
-      const active = raffleAccounts.filter(r => !r.account.winnerSelected)
-      
+      const completed = raffleAccounts.filter((r) => r.account.winnerSelected)
+      const active = raffleAccounts.filter((r) => !r.account.winnerSelected)
+
       setRaffles(active)
       setCompletedRaffles(completed)
-      
+
       if (active.length > 0 && !selectedRaffle) {
         setSelectedRaffle(active[0].publicKey.toString())
       }
@@ -201,7 +201,7 @@ const RaffleContent: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [wallet.connected, program])
+  }, [wallet.connected, program, selectedRaffle])
 
   const initializeProgram = useCallback(async () => {
     if (!wallet.publicKey) {
@@ -210,8 +210,17 @@ const RaffleContent: React.FC = () => {
     }
 
     try {
+      if (!wallet.publicKey || !wallet.signTransaction || !wallet.signAllTransactions) {
+        throw new Error('Wallet not fully initialized')
+      }
       const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
-      const provider = new AnchorProvider(connection, wallet as any, { commitment: 'confirmed' })
+      const walletAdapter = {
+        publicKey: wallet.publicKey,
+        signTransaction: wallet.signTransaction,
+        signAllTransactions: wallet.signAllTransactions,
+        payer: wallet.publicKey,
+      }
+      const provider = new AnchorProvider(connection, walletAdapter, { commitment: 'confirmed' })
       const program = new Program(idl as Idl, programId, provider)
       setProgram(program)
     } catch (error) {
@@ -280,14 +289,14 @@ const RaffleContent: React.FC = () => {
 
   const getCurrentRaffleState = useCallback(() => {
     if (!selectedRaffle) return null
-    return raffles.find(r => r.publicKey.toString() === selectedRaffle)?.account || null
+    return raffles.find((r) => r.publicKey.toString() === selectedRaffle)?.account || null
   }, [selectedRaffle, raffles])
 
   const calculateWinProbability = () => {
     const currentRaffle = getCurrentRaffleState()
     if (!currentRaffle || !wallet.publicKey) return '0%'
 
-    const userEntries = currentRaffle.participants?.find(p => p.wallet.equals(wallet.publicKey))
+    const userEntries = currentRaffle.participants?.find((p) => wallet.publicKey && p.wallet.equals(wallet.publicKey))
     if (!userEntries) return '0%'
 
     const userTokens = userEntries.tokens.toNumber()
@@ -339,7 +348,8 @@ const RaffleContent: React.FC = () => {
                       <option value="">-- Select a raffle --</option>
                       {raffles.map((raffle, idx) => (
                         <option key={raffle.publicKey.toString()} value={raffle.publicKey.toString()}>
-                          Raffle #{idx + 1}: {raffle.publicKey.toString().slice(0, 8)}... ({formatSOL(raffle.account.totalSol)} SOL)
+                          Raffle #{idx + 1}: {raffle.publicKey.toString().slice(0, 8)}... (
+                          {formatSOL(raffle.account.totalSol)} SOL)
                         </option>
                       ))}
                     </select>
@@ -412,9 +422,7 @@ const RaffleContent: React.FC = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="mb-4 text-center">No active raffles found.</div>
-                  <div className="text-center text-sm text-gray-500">
-                    Check back later for upcoming raffles.
-                  </div>
+                  <div className="text-center text-sm text-gray-500">Check back later for upcoming raffles.</div>
                 </div>
               )}
             </CardContent>
@@ -425,8 +433,8 @@ const RaffleContent: React.FC = () => {
                     loading
                       ? 'bg-blue-50 text-blue-800'
                       : statusMessage.toLowerCase().includes('error')
-                      ? 'bg-red-50 text-red-800'
-                      : 'bg-green-50 text-green-800'
+                        ? 'bg-red-50 text-red-800'
+                        : 'bg-green-50 text-green-800'
                   }`}
                 >
                   {statusMessage}
@@ -467,7 +475,10 @@ const RaffleContent: React.FC = () => {
                     <div>
                       <h3 className="mb-2 font-semibold">Potential Win Amount</h3>
                       <div className="text-3xl font-bold text-green-600">
-                        {formatSOL(currentRaffleState.totalSol ? new BN(currentRaffleState.totalSol.toNumber() / 2) : new BN(0))} SOL
+                        {formatSOL(
+                          currentRaffleState.totalSol ? new BN(currentRaffleState.totalSol.toNumber() / 2) : new BN(0),
+                        )}{' '}
+                        SOL
                       </div>
                       <p className="text-sm text-gray-600">50% of the current pot</p>
                     </div>
@@ -488,7 +499,11 @@ const RaffleContent: React.FC = () => {
                         Winner: {currentRaffleState.winner.toString().substring(0, 8)}...
                       </p>
                       <p className="text-sm text-amber-700">
-                        Prize: {formatSOL(currentRaffleState.totalSol ? new BN(currentRaffleState.totalSol.toNumber() / 2) : new BN(0))} SOL
+                        Prize:{' '}
+                        {formatSOL(
+                          currentRaffleState.totalSol ? new BN(currentRaffleState.totalSol.toNumber() / 2) : new BN(0),
+                        )}{' '}
+                        SOL
                       </p>
                     </div>
                   )}
@@ -521,9 +536,7 @@ const RaffleContent: React.FC = () => {
                     >
                       <div>Raffle #{raffle.publicKey.toString().slice(0, 8)}</div>
                       <div>{raffle.account.winner.toString().slice(0, 8)}...</div>
-                      <div className="text-right">
-                        {formatSOL(new BN(raffle.account.totalSol.toNumber() / 2))} SOL
-                      </div>
+                      <div className="text-right">{formatSOL(new BN(raffle.account.totalSol.toNumber() / 2))} SOL</div>
                     </div>
                   ))
                 ) : (
