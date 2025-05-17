@@ -63,13 +63,15 @@ The solutions that we came up with to solve these problems:
 
 ### Quick start
 
-1.  `Git clone`
-2.  `npm install`
-3.  `npm run chain`
-4.  `npm run deploy`
-5.  `cd packages/nextjs`
-6.  `.env` - Read comments [here](https://github.com/5eh/LOCALE/blob/main/packages/nextjs/.env.example)
-7.  `npm run start`
+1.  `https://github.com/BlackHistoryDAO/SOLANACHARITYCOIN`
+2.  `pnpm install`
+3.  OPEN [Playground](https://beta.solpg.io/) && Copy `raffle/programs/raffle/src/lib.rs` && Copy + paste into a new program environment
+4.  CREATE a new Program ID and deploy into Devnet or Testnet `IDL`
+5.  PASTE new `IDL` into `raffle/target/idl/raffle.json`
+6. PASTE new program ID into `raffle/programs/raffle/src/lib.rs`
+7.  UPDATE frontend code stack to refer to new `PROGRAM_ID`
+8.  `pnpm dev`
+9. `pnpm build` - After changing frontend experience to fit the needs of your charities!
 
 ### Deep dive
 
