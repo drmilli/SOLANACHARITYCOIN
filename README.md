@@ -1,15 +1,15 @@
 <div align="center">
-<img src="https://i.ibb.co/cDcMQs9/Frame-3649.png" alt="logo" width="120" height="120" />
+<img src="https://i.ibb.co/tw16xxrn/photo-2025-04-01-23-09-13.jpg" alt="logo" width="120" height="120" />
 </div>
 
-<h3 align="center">LOCALE</h3>
+<h3 align="center">WHITELABEL 50/50 RAFFLE</h3>
   <p align="center">
   <br />
-    <a href="https://drive.google.com/file/d/1cQzj4q9q7yn0LPZ4G287Bjo_bN-n7KkM/view?usp=sharing">Youtube</a>
+    <a href="https://www.loom.com/share/92f62aa749bd42df83549c2a286b1c46">Technical Video</a>
     ·
-    <a href="https://drive.google.com/file/d/1Lt-Ocd0fLM6UAZ5BbDNExJSKPsVkLkG4/view?usp=sharing">Long Video</a>
+    <a href="https://www.youtube.com/watch?v=wbvuLKwJRlI">Overview Video</a>
     ·
-    <a href="https://github.com/5eh/LOCALE">Repo</a>
+    <a href="https://github.com/BlackHistoryDAO/SOLANACHARITYCOIN">Repo</a>
   </p>
 </div>
 
