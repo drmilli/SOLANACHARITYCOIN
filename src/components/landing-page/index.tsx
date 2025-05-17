@@ -168,8 +168,8 @@ export function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.5 }}
               >
-                Every $1 you donate helps preserve Black history, gives you a $TBHF charity coin, and a lifetime entry
-                into our 50/50 raffles! A winner is chosen every 222,222 coins sold{' '}
+                Ever SOL you donate helps preserve Black history and gives you entries into our 50/50 raffles! A winner
+                is chosen after the 1 SOL donation threshold is met.
               </motion.p>
 
               <motion.div
@@ -183,20 +183,7 @@ export function LandingPage() {
                   className="text-lg bg-black hover:bg-gray-900 text-white font-medium shadow-sm hover:shadow-md transition-all duration-300 min-w-[200px]"
                 >
                   <Link href="/enter" className="flex items-center justify-center w-full">
-                    Buy Charity Coins
-                  </Link>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="text-lg border-2 border-black text-black dark:border-black font-medium shadow-sm hover:shadow-md transition-all duration-300 min-w-[200px]"
-                >
-                  <Link
-                    href="https://platform.engiven.com/give/2519/widget/2717"
-                    className="flex items-center justify-center w-full"
-                  >
-                    Donate Without Participating
+                    Donate for a Chance to Win
                   </Link>
                 </Button>
               </motion.div>
@@ -220,7 +207,7 @@ export function LandingPage() {
                 </p>
                 <div className="flex gap-4">
                   <Button variant="outline">
-                    <Link href={'https://tbfoundation.org/'}> Our Charity</Link>
+                    <Link href={'https://www.tbhfdn.org'}> Our Charity</Link>
                   </Button>
                   <Button variant="ghost">
                     <Link href={'https://www.tbhfdn.org/about'}> Our Why</Link>
@@ -294,7 +281,7 @@ export function LandingPage() {
                     </div>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold mb-2">Buy Charity Coins</h3>
+                <h3 className="text-xl font-bold mb-2">Donate for a Chance to Win!</h3>
                 <p className="text-muted-foreground">Purchase your Charity Coins for $1 each.</p>
               </div>
 
@@ -341,9 +328,11 @@ export function LandingPage() {
                     </li>
                     <li>Transparent, fair, and verifiable raffle drawings.</li>
                   </ul>
-                  <Button size="lg" className="text-lg">
-                    Buy Charity Coins
-                  </Button>
+                  <Link href="/enter">
+                    <Button size="lg" className="text-lg">
+                      Buy Charity Coins
+                    </Button>
+                  </Link>
                 </div>
                 <div>
                   <div className="bg-background p-6 rounded-lg">
