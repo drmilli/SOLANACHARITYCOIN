@@ -168,7 +168,7 @@ export function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.5 }}
               >
-                Ever SOL you donate helps preserve Black history and gives you entries into our 50/50 raffles! A winner
+                Every SOL you donate helps preserve Black history and gives you entries into our 50/50 raffles! A winner
                 is chosen after the 1 SOL donation threshold is met.
               </motion.p>
 
