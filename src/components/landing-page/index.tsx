@@ -75,10 +75,8 @@ function HoverRevealImage() {
     return () => clearTimeout(timer)
   }, [])
 
-  const imageUrl =
-    "url('https://plus.unsplash.com/premium_photo-1664640458531-3c7cca2a9323?q=80&w=2574&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"
+  const imageUrl = "url('/TBHF.png')"
 
-  // Create a global event handler to capture mouse movements
   React.useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
       const section = document.querySelector('.hero-section')
@@ -98,7 +96,6 @@ function HoverRevealImage() {
       }
     }
 
-    // Add global mouse event listener
     document.addEventListener('mousemove', handleGlobalMouseMove)
 
     return () => {
@@ -107,7 +104,7 @@ function HoverRevealImage() {
   }, [isInitialized])
 
   return (
-    <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 1 }}>
+    <div className="absolute inset-0 overflow-visible" style={{ zIndex: 1 }}>
       <div className="absolute inset-0 bg-cover bg-center">
         <Waves backgroundImage="linear-gradient(to right, #4f46e5, #8b5cf6)" className="w-full h-full" />
       </div>
@@ -146,12 +143,12 @@ export function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <main className="flex-1">
-        <section className="mx-2 py-12 md:py-24 relative overflow-hidden rounded-2xl bg-gray-100">
+    <div className="bg-background text-foreground flex flex-col overflow-auto">
+      <main className="flex-1 overflow-visible w-full">
+        <section className="mx-2 py-12 md:py-24 relative overflow-visible rounded-2xl bg-gray-100 w-full">
           <HoverRevealImage />
 
-          <div className="container relative z-1">
+          <div className="container relative z-10">
             <div className="flex flex-col items-center gap-6 text-center max-w-3xl mx-auto">
               <motion.h1
                 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900"
@@ -191,7 +188,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="about" className="py-16 bg-accent/5 md:mx-4 lg:mx-12 rounded-md">
+        <section id="about" className="py-16 bg-accent/5 md:mx-4 lg:mx-12 rounded-md w-full">
           <div className="container">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
@@ -233,7 +230,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="benefits" className="py-16 md:mx-4 lg:mx-24">
+        <section id="benefits" className="py-16 md:mx-4 lg:mx-24 w-full">
           <div className="container">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">How it works</h2>
@@ -262,7 +259,7 @@ export function LandingPage() {
 
         <section
           id="how-it-works"
-          className="py-16 bg-gradient-to-br from-accent/10 to-secondary/10 md:mx-4 lg:mx-12 rounded-md"
+          className="py-16 bg-gradient-to-br from-accent/10 to-secondary/10 md:mx-4 lg:mx-12 rounded-md w-full"
         >
           <div className="container">
             <div className="text-center mb-12">
@@ -314,7 +311,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="py-16 md:mx-4 lg:mx-24">
+        <section className="py-16 md:mx-4 lg:mx-24 w-full">
           <div className="container">
             <div className="bg-card border border-border rounded-xl p-8 md:p-12">
               <div className="grid md:grid-cols-2 gap-8 items-center">

@@ -120,7 +120,6 @@ export function Waves({
     const container = containerRef.current
     ctxRef.current = canvas.getContext('2d')
 
-    // Initialize fade-in state
     opacityRef.current = 1
     container.style.opacity = '1'
 
@@ -131,21 +130,16 @@ export function Waves({
     }
 
     function handleScroll() {
-      // Calculate opacity based on scroll position
-      // Fade out completely by 400px of scroll
       const scrollY = window.scrollY
       const fadeDistance = 400
       const newOpacity = Math.max(0, 1 - scrollY / fadeDistance)
       opacityRef.current = newOpacity
 
-      // Apply opacity to container
       if (container) {
         container.style.opacity = String(newOpacity)
 
-        // Also adjust the background image if it exists
         const bgImage = container.querySelector('.background-image')
         if (bgImage) {
-          // Make background fade slightly faster than the waves
           const bgOpacity = backgroundOpacity * Math.max(0, 1 - scrollY / (fadeDistance * 0.8))
           bgImage.style.opacity = String(bgOpacity)
         }
@@ -284,7 +278,7 @@ export function Waves({
       updateMouse(e.pageX, e.pageY)
     }
     function onTouchMove(e) {
-      e.preventDefault()
+      // Remove preventDefault to allow natural scrolling on mobile
       const touch = e.touches[0]
       updateMouse(touch.clientX, touch.clientY)
     }
@@ -312,7 +306,7 @@ export function Waves({
     // Add event listeners
     window.addEventListener('resize', onResize)
     window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('touchmove', onTouchMove, { passive: true })
     window.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
@@ -332,16 +326,16 @@ export function Waves({
         willChange: 'opacity',
         position: 'relative',
       }}
-      className={cn('absolute top-0 left-0 w-full h-full overflow-hidden', className)}
+      className={cn('absolute top-0 left-0 w-full h-full overflow-visible', className)}
     >
       {backgroundImage && (
         <div
-          className="absolute inset-0 z-0 background-image"
+          className="absolute inset-0 z-0 "
           style={{
-            backgroundImage: `url(${backgroundImage})`,
+            backgroundImage: `url(/TBHF.png)`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            opacity: backgroundOpacity,
+            opacity: 0.5,
             mixBlendMode: 'soft-light',
             transition: 'opacity 0.3s ease-out',
           }}

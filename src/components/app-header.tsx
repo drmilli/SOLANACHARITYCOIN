@@ -22,7 +22,7 @@ export function AppHeader({ links = [] }: { links: { label: string; path: string
       <div className="mx-auto flex justify-between items-center max-w-7xl px-4 py-3">
         <div className="flex items-center gap-4">
           <Link className="flex items-center hover:opacity-85 transition-all duration-300 hover:scale-[1.02]" href="/">
-            <Image src="/TBHF_Main_Text.png" height={80} width={80} alt="TBHF" className="h-auto w-auto" />
+            <Image src="/TBHF_Main_Text.png" height={70} width={70} alt="TBHF" className="h-auto w-auto" />
           </Link>
         </div>
 
@@ -46,10 +46,6 @@ export function AppHeader({ links = [] }: { links: { label: string; path: string
         </div>
 
         <div className="hidden md:flex items-center gap-5">
-          {/* <WalletButton
-            size="sm"
-            className="shadow hover:shadow-md bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md transition-all duration-200 hover:translate-y-[-1px]"
-          /> */}
           <ClusterButton
             size="sm"
             className="shadow hover:shadow-md bg-white dark:bg-neutral-800 border border-gray-200 dark:border-gray-700 rounded-md transition-all duration-200 hover:translate-y-[-1px]"
