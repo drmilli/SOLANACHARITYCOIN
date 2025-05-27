@@ -278,22 +278,6 @@ export function LandingPage() {
           </div>
         </div>
       </main>
-
-      <div className="py-8 border-t max-w-5xl mx-auto px-4 mt-4">
-        <div className="flex justify-between items-center flex-wrap">
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} The Black History Foundation
-          </p>
-          <div className="flex gap-4 mt-2 md:mt-0">
-            <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
-              Privacy
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
-              Terms
-            </Link>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
