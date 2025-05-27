@@ -41,24 +41,74 @@ interface BenefitProps {
   title: string
   description: string
   icon: React.ReactNode
+  backgroundColor: string
 }
+
+interface PaymentProcessProps {
+  step: number
+  title: string
+  description: string
+  backgroundColor: string
+}
+
+// Helper function to convert hex to rgba
+const hexToRGBA = (hex: string, alpha: number): string => {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+const isDarkColor = (hex: string): boolean => {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  // Calculate brightness (YIQ formula)
+  return r * 0.299 + g * 0.587 + b * 0.114 < 128
+}
+
+
 
 const benefits: BenefitProps[] = [
   {
     title: 'Donate',
     description: 'Every $1 you donate = 1 $TBHF charity coin.',
     icon: <UsersIcon className="h-6 w-6" />,
+    backgroundColor: '#90181b',
   },
   {
     title: 'Receive',
     description:
       'Your coins are delivered to your wallet automatically. We will automatically create a wallet for you if you do not have one.',
     icon: <BarChartIcon className="h-6 w-6" />,
+    backgroundColor: '#ebbe1e',
   },
   {
     title: 'Win Prizes',
     description: 'Every 222,222 coins sold triggers a new 50/50 raffle where you could win at least $111,111!',
     icon: <GiftIcon className="h-6 w-6" />,
+    backgroundColor: '#00ad61',
+  },
+]
+
+const paymentProcess: PaymentProcessProps[] = [
+  {
+    step: 1,
+    title: 'Donate for a Chance to Win!',
+    description: 'Purchase your Charity Coins for $1 each.',
+    backgroundColor: '#00ad61', // Green (inverse sequence from benefits)
+  },
+  {
+    step: 2,
+    title: 'Support The Cause',
+    description: '50% of all proceeds go directly to supporting Black history education initiatives.',
+    backgroundColor: '#ebbe1e', // Yellow (same as benefits)
+  },
+  {
+    step: 3,
+    title: 'Win A Prize',
+    description: 'Winners are chosen every 222,222 coins that are sold.',
+    backgroundColor: '#90181b', // Red (inverse sequence from benefits)
   },
 ]
 
@@ -167,13 +217,24 @@ export function LandingPage() {
               {benefits.map((benefit, index) => (
                 <div key={index} className="flex flex-col items-center text-center">
                   <div className="mb-4">
-                    <div className="w-16 h-16 rounded-full bg-[#9EF8F8]/30 flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-[#9EF8F8]/50 flex items-center justify-center">
+                    <div
+                      className="w-16 h-16 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: hexToRGBA(benefit.backgroundColor, 0.3) }}
+                    >
+                      <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center"
+                        style={{
+                          backgroundColor: benefit.backgroundColor,
+                          color: isDarkColor(benefit.backgroundColor) ? 'white' : '#050505',
+                        }}
+                      >
                         {benefit.icon}
                       </div>
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{benefit.title}</h3>
+                  <h3 className="text-xl font-bold mb-2" style={{ color: benefit.backgroundColor }}>
+                    {benefit.title}
+                  </h3>
                   <p className="text-muted-foreground">{benefit.description}</p>
                 </div>
               ))}
@@ -194,43 +255,30 @@ export function LandingPage() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-              <div className="flex flex-col items-center text-center">
-                <div className="mb-4">
-                  <div className="w-16 h-16 rounded-full bg-[#9EF8F8]/30 flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-[#9EF8F8]/50 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-primary">1</span>
+              {paymentProcess.map((process, index) => (
+                <div key={index} className="flex flex-col items-center text-center">
+                  <div className="mb-4">
+                    <div
+                      className="w-16 h-16 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: hexToRGBA(process.backgroundColor, 0.3) }}
+                    >
+                      <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center"
+                        style={{
+                          backgroundColor: process.backgroundColor,
+                          color: isDarkColor(process.backgroundColor) ? 'white' : '#050505',
+                        }}
+                      >
+                        <span className="text-2xl font-bold">{process.step}</span>
+                      </div>
                     </div>
                   </div>
+                  <h3 className="text-xl font-bold mb-2" style={{ color: process.backgroundColor }}>
+                    {process.title}
+                  </h3>
+                  <p className="text-muted-foreground">{process.description}</p>
                 </div>
-                <h3 className="text-xl font-bold mb-2">Donate for a Chance to Win!</h3>
-                <p className="text-muted-foreground">Purchase your Charity Coins for $1 each.</p>
-              </div>
-
-              <div className="flex flex-col items-center text-center">
-                <div className="mb-4">
-                  <div className="w-16 h-16 rounded-full bg-[#9EF8F8]/30 flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-[#9EF8F8]/50 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-primary">2</span>
-                    </div>
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold mb-2">Support The Cause</h3>
-                <p className="text-muted-foreground">
-                  50% of all proceeds go directly to supporting Black history education initiatives.
-                </p>
-              </div>
-
-              <div className="flex flex-col items-center text-center">
-                <div className="mb-4">
-                  <div className="w-16 h-16 rounded-full bg-[#9EF8F8]/30 flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-[#9EF8F8]/50 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-primary">3</span>
-                    </div>
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold mb-2">Win A Prize</h3>
-                <p className="text-muted-foreground">Winners are chosen every 222,222 coins that are sold.</p>
-              </div>
+              ))}
             </div>
           </div>
         </div>
