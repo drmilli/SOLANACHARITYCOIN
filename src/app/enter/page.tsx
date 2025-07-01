@@ -138,7 +138,7 @@ const idl = {
   ],
 }
 
-const programId = new PublicKey('CpG92WPSAiiJLZXdTBGBGzQDoj2NTfsLwUoiaYtqJnx7')
+const programId = new PublicKey('DsZZh8M2JMYSMPvvM1ZQdYZhgab9zJvcdY8RTLAEeB5e')
 const THRESHOLD_SOL = 1
 const THRESHOLD_LAMPORTS = THRESHOLD_SOL * LAMPORTS_PER_SOL
 

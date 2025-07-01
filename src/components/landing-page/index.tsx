@@ -72,7 +72,7 @@ const isDarkColor = (hex: string): boolean => {
 const benefits: BenefitProps[] = [
   {
     title: 'Donate',
-    description: 'Every $1 you donate = 1 $TBHF charity coin.',
+    description: 'Every $1 you donate = 1 $TFP charity coin.',
     icon: <UsersIcon className="h-6 w-6" />,
     backgroundColor: '#90181b',
   },
@@ -143,10 +143,11 @@ export function LandingPage() {
 
           <div className="relative z-10 px-4">
             <div className="flex flex-col items-center gap-4 text-center mx-auto">
-              <h1 className="text-4xl md:text-6xl font-bold text-gray-900">Support Black History & Win</h1>
+              <h1 className="text-4xl md:text-6xl font-bold text-gray-900">Support Trade For Peace & Win</h1>
 
               <p className="text-xl text-gray-800 max-w-xl">
-                Every SOL you donate helps preserve Black history and gives you entries into our 50/50 raffles! A winner
+                Join us in our mission to end the war in the Middle East. <br />
+                Every SOL you donate helps build the peace and gives you entries into our 50/50 raffles! A winner
                 is chosen after the 1 SOL donation threshold is met.
               </p>
 
@@ -167,29 +168,26 @@ export function LandingPage() {
         <div id="about" className="py-12 bg-accent/5 max-w-5xl mx-auto my-4 rounded-lg">
           <div className="grid md:grid-cols-2 gap-8 items-center px-4">
             <div>
-              <h2 className="text-3xl font-bold mb-6">About The Black History Foundation</h2>
+              <h2 className="text-3xl font-bold mb-6">About Trade for Peace</h2>
               <p className="text-muted-foreground mb-4">
-                The Black History Foundation is a nonprofit organization dedicated to preserving, protecting, and
-                promoting the rich legacy of Black history in America—both physically and digitally.
+                A Call to End the War in the Middle East <br /> We believe in a world where dialogue triumphs over destruction. <br /> Trade for Peace is a global movement calling for an end to the bloodshed in the Middle East. We advocate for lasting peace, humanitarian aid, economic cooperation, and the protection of every innocent life—regardless of nationality, race, or religion.
               </p>
               <p className="text-muted-foreground mb-6">
-                By leveraging technology, we safeguard historical records, stories, and cultural contributions for
-                future generations. Through education, community initiatives, and digital archiving, we ensure that
-                Black history is never lost, forgotten, or erased.
+               We advocate for lasting peace, humanitarian aid, economic cooperation, and the protection of every innocent life—regardless of nationality, race, or religion.
               </p>
               <div className="flex gap-4">
                 <Button variant="outline">
-                  <Link href={'https://www.tbhfdn.org'}> Our Charity</Link>
+                  <Link href={''}> Our Charity</Link>
                 </Button>
                 <Button variant="ghost">
-                  <Link href={'https://www.tbhfdn.org/about'}> Our Why</Link>
+                  <Link href={''}> Our Why</Link>
                 </Button>
               </div>
             </div>
             <div className="w-full h-auto aspect-square max-w-xl mx-auto rounded-lg">
               {mounted ? (
                 <Image
-                  src={currentTheme === 'dark' ? '/dark_mode_image.png' : '/light_mode_image.png'}
+                  src={currentTheme === 'dark' ? '/TFPbr.png' : '/TFPbr.png'}
                   alt="TBHF image"
                   className="w-full h-full object-cover"
                   width={500}
@@ -209,7 +207,7 @@ export function LandingPage() {
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-4">How it works</h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Your contribution makes a real difference in preserving and promoting Black history.
+                Support humanitarian organizations working directly in Gaza, Israel, Yemen, Syria, and beyond.
               </p>
             </div>
 
@@ -289,8 +287,8 @@ export function LandingPage() {
               <div>
                 <h2 className="text-3xl font-bold mb-4">Why donate?</h2>
                 <ul className="list-disc pl-5 space-y-1 text-muted-foreground mb-4">
-                  <li>Support Black History education, scholarships, and community programs.</li>
-                  <li>Receive $TBHF Charity Coins as a thank-you gift.</li>
+                  <li>Add your name to the global call for an immediate ceasefire and long-term peace process.</li>
+                  <li>Receive $TFP Charity Coins as a thank-you gift.</li>
                   <li>
                     Lifetime eligibility for future raffle drawings, so the more you hold, the better your chances.
                   </li>
@@ -298,7 +296,7 @@ export function LandingPage() {
                 </ul>
                 <Link href="/enter">
                   <Button size="lg" className="text-lg">
-                    Buy Charity Coins
+                    Buy $TFP Coins
                   </Button>
                 </Link>
               </div>

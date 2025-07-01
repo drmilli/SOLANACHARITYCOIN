@@ -5,7 +5,7 @@ import { AppLayout } from '@/components/app-layout'
 import React from 'react'
 
 export const metadata: Metadata = {
-  title: 'The Black History Foundation',
+  title: 'Trade for Peace',
   description: 'A foundation raffle charity token',
 }
 

@@ -22,7 +22,7 @@ export function AppHeader({ links = [] }: { links: { label: string; path: string
       <div className="mx-auto flex justify-between items-center max-w-7xl px-4 py-3">
         <div className="flex items-center gap-4">
           <Link className="flex items-center hover:opacity-85 transition-all duration-300 hover:scale-[1.02]" href="/">
-            <Image src="/TBHF_Main_Text.png" height={70} width={70} alt="TBHF" className="h-auto w-auto" />
+            <Image src="/TFPbr.png" height={60} width={70} alt="TBHF" className="h-auto w-auto" />
           </Link>
         </div>
 

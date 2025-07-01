@@ -106,7 +106,7 @@ const idl = {
 }
 
 // Program ID
-const programId = new PublicKey('CpG92WPSAiiJLZXdTBGBGzQDoj2NTfsLwUoiaYtqJnx7')
+const programId = new PublicKey('DsZZh8M2JMYSMPvvM1ZQdYZhgab9zJvcdY8RTLAEeB5e')
 
 // Constants
 const THRESHOLD_SOL = 1

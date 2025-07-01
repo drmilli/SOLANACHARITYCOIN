@@ -4,7 +4,9 @@ use solana_program::hash::{hash, Hash};
 use std::convert::TryInto;
 use std::str::FromStr;
 
-declare_id!("CpG92WPSAiiJLZXdTBGBGzQDoj2NTfsLwUoiaYtqJnx7");
+// This is your program's public key and it will update
+// automatically when you build the project.
+declare_id!("DsZZh8M2JMYSMPvvM1ZQdYZhgab9zJvcdY8RTLAEeB5e");
 
 #[program]
 pub mod raffle {
@@ -15,13 +17,13 @@ pub mod raffle {
         raffle_state.admin = *ctx.accounts.admin.key;
         raffle_state.treasury = Pubkey::default();
         raffle_state.admin_auth_1 =
-            Pubkey::from_str("CFn1rRSsEErL6odfyvdqpAMuJr5d2Bwk4whiAsMukJjK").unwrap();
+            Pubkey::from_str("Y1aMxGaerMwQcr8cbKeREdyRRkYfdgVF4rrxgGVBJJw").unwrap();
         raffle_state.admin_auth_2 =
-            Pubkey::from_str("8rEGjzfq9u7FG3stzv4KjcNb2Vnvu8TeRJnYM7SAadYf").unwrap();
+            Pubkey::from_str("Y1aMxGaerMwQcr8cbKeREdyRRkYfdgVF4rrxgGVBJJw").unwrap();
         raffle_state.admin_auth_3 =
-            Pubkey::from_str("BKLfwUHia9MwnDhnJUj6bMyguVxcn96SNGsEgUVRhjdx").unwrap();
+            Pubkey::from_str("Y1aMxGaerMwQcr8cbKeREdyRRkYfdgVF4rrxgGVBJJw").unwrap();
         raffle_state.payout_wallet =
-            Pubkey::from_str("7wqYGrDJmYPdqeoqsM2bdNGb6yhoZSQzZiwyEEJBCgq6").unwrap();
+            Pubkey::from_str("Y1aMxGaerMwQcr8cbKeREdyRRkYfdgVF4rrxgGVBJJw").unwrap();
         raffle_state.total_sol = 0;
         raffle_state.threshold_reached = false;
         raffle_state.winner_selected = false;

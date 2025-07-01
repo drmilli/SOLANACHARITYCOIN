@@ -28,7 +28,7 @@ const WalletButton = dynamic(
             backgroundColor: !mounted ? '#ccc' : connecting ? '#666' : '#512da8',
             color: 'white',
             border: 'none',
-            fontSize: '14px',
+            fontSize: '16px',
             fontWeight: 500,
             transition: 'background-color 0.2s ease',
             ...(props.style || {}),

@@ -134,7 +134,7 @@ const idl = {
   ],
 }
 
-const programId = new PublicKey('CpG92WPSAiiJLZXdTBGBGzQDoj2NTfsLwUoiaYtqJnx7')
+const programId = new PublicKey('DsZZh8M2JMYSMPvvM1ZQdYZhgab9zJvcdY8RTLAEeB5e')
 
 const findTreasuryPDA = (programId: PublicKey) => {
   return PublicKey.findProgramAddressSync([Buffer.from('treasury')], programId)
